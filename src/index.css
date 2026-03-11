@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+/* ===== Tema MackSeguro — Mackenzie ===== */
+@theme {
+  --color-mack: #ab181c;
+  --color-mack-dark: #8a1316;
+  --color-mack-light: #d42027;
+  --color-mack-bg: #FEF2F2;
+
+  --color-dark: #1a1a2e;
+  --color-dark-light: #2d2d44;
+
+  --color-emerald: #059669;
+  --color-emerald-light: #ECFDF5;
+  --color-amber: #D97706;
+  --color-amber-light: #FFFBEB;
+  --color-rose: #BE123C;
+  --color-rose-light: #FFF1F2;
+
+  --color-bg: #ffffff;
+  --color-bg-surface: #F9FAFB;
+  --color-bg-muted: #F3F4F6;
+  --color-text: #111827;
+  --color-text-secondary: #4B5563;
+  --color-text-muted: #9CA3AF;
+  --color-border: #E5E7EB;
+  --color-border-strong: #D1D5DB;
+
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+* {
+  font-family: var(--font-sans);
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== Dark Mode ===== */
+.dark {
+  --color-mack-bg: #1f1215;
+  --color-bg: #0f1117;
+  --color-bg-surface: #161922;
+  --color-bg-muted: #1d2030;
+  --color-text: #E5E7EB;
+  --color-text-secondary: #9CA3AF;
+  --color-text-muted: #6B7280;
+  --color-border: #262838;
+  --color-border-strong: #374050;
+  --color-dark: #080910;
+  --color-dark-light: #1a1c28;
+  --color-emerald-light: #06291a;
+  --color-amber-light: #1c1805;
+  --color-rose-light: #1f0810;
+}
+
+/* ===== Buttons ===== */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  background-color: var(--color-mack);
+  color: #ffffff;
+  padding: 0.625rem 1.5rem;
+  font-size: 0.875rem;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-mack-dark);
+}
+
+.btn-dark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  background-color: var(--color-dark);
+  color: #ffffff;
+  padding: 0.625rem 1.5rem;
+  font-size: 0.875rem;
+}
+
+.btn-dark:hover {
+  background-color: var(--color-dark-light);
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+  background-color: transparent;
+  color: var(--color-mack);
+  padding: 0.5625rem 1.5rem;
+  font-size: 0.875rem;
+  border: 1.5px solid var(--color-mack);
+}
+
+.btn-outline:hover {
+  background-color: var(--color-mack);
+  color: #ffffff;
+}
+
+/* ===== Cards ===== */
+.card-mk {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  transition: border-color 0.15s ease;
+}
+
+.card-mk:hover {
+  border-color: var(--color-border-strong);
+}
+
+/* Respeitar preferência de movimento reduzido */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===== Animations ===== */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+@keyframes float-delayed {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.08; }
+  50% { opacity: 0.18; }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float-delayed 8s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 5s ease-in-out infinite;
+}
