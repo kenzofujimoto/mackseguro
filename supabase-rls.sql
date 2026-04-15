@@ -46,6 +46,9 @@ CREATE TABLE IF NOT EXISTS module_progress (
   trail_slug text NOT NULL,
   module_id text NOT NULL,
   completed boolean DEFAULT false,
+  completed_at timestamp with time zone,
+  quiz_score integer DEFAULT 0,
+  quiz_total integer DEFAULT 0,
   updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
   UNIQUE(user_id, trail_slug, module_id)
 );

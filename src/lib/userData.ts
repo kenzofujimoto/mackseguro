@@ -234,14 +234,17 @@ export async function syncRemoteProgressToLocal(userId: string): Promise<void> {
   if (!normalizedUserId) return;
 
   const rows = await fetchRemoteModuleProgress(normalizedUserId);
-  if (!rows || rows.length === 0) return;
+  if (!rows) return; // Se rows for falsy (por ex. sem config de DB), abortamos
 
   const state = readState();
-  let updated = false;
+  let updatedLocal = false;
+
+  const remoteKeys = new Set<string>();
 
   for (const row of rows) {
     if (!row.trail_slug || typeof row.module_id !== "number") continue;
     const key = moduleKey(row.trail_slug, row.module_id);
+    remoteKeys.add(key);
     
     if (row.completed) {
       const local = state.moduleProgress[key];
@@ -253,13 +256,32 @@ export async function syncRemoteProgressToLocal(userId: string): Promise<void> {
           quizScore: row.quiz_score || 0,
           quizTotal: row.quiz_total || 0,
         };
-        updated = true;
+        updatedLocal = true;
       }
     }
   }
 
-  if (updated) {
+  if (updatedLocal) {
     writeState(state);
+  }
+
+  // AGORA a segunda etapa: enviar qualquer progresso local antigo/preso p/ o servidor:
+  for (const [key, progress] of Object.entries(state.moduleProgress)) {
+    if (progress.completed && !remoteKeys.has(key)) {
+      const [slug, moduloIdStr] = key.split(":");
+      const moduloId = Number(moduloIdStr);
+      if (slug && !isNaN(moduloId)) {
+        queueRemoteModuleProgressSync({
+          userId: normalizedUserId,
+          slug,
+          moduloId,
+          completed: progress.completed,
+          completedAt: progress.completedAt,
+          quizScore: progress.quizScore,
+          quizTotal: progress.quizTotal,
+        });
+      }
+    }
   }
 }
 
