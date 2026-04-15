@@ -5,6 +5,7 @@ import {
   queueRemoteForumModuleBackfillSync,
   queueRemoteForumReportSync,
   queueRemoteModuleProgressSync,
+  fetchRemoteModuleProgress,
 } from "./remotePersistence.ts";
 
 export interface PersistedModuleProgress {
@@ -226,6 +227,40 @@ export function markModuleCompleted(
     quizScore: progress.quizScore,
     quizTotal: progress.quizTotal,
   });
+}
+
+export async function syncRemoteProgressToLocal(userId: string): Promise<void> {
+  const normalizedUserId = userId.trim();
+  if (!normalizedUserId) return;
+
+  const rows = await fetchRemoteModuleProgress(normalizedUserId);
+  if (!rows || rows.length === 0) return;
+
+  const state = readState();
+  let updated = false;
+
+  for (const row of rows) {
+    if (!row.trail_slug || typeof row.module_id !== "number") continue;
+    const key = moduleKey(row.trail_slug, row.module_id);
+    
+    if (row.completed) {
+      const local = state.moduleProgress[key];
+      // Atualiza o progresso local se estiver ausente ou desatualizado
+      if (!local || !local.completed || local.quizScore !== row.quiz_score) {
+        state.moduleProgress[key] = {
+          completed: row.completed,
+          completedAt: row.completed_at || new Date().toISOString(),
+          quizScore: row.quiz_score || 0,
+          quizTotal: row.quiz_total || 0,
+        };
+        updated = true;
+      }
+    }
+  }
+
+  if (updated) {
+    writeState(state);
+  }
 }
 
 export function getTrailProgress(slug: string, totalModules: number): {

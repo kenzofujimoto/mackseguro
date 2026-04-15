@@ -1,4 +1,4 @@
-import { getSupabaseClient, shouldSyncToSupabase } from "./supabaseConfig.ts";
+import { getSupabaseClient, shouldSyncToSupabase, shouldReadFromSupabase } from "./supabaseConfig.ts";
 
 interface RemoteModuleProgressInput {
   userId: string;
@@ -22,6 +22,17 @@ interface RemoteForumCommentInput {
   createdAt: string;
   legacyReplyCount: number;
 }
+
+export interface RemoteModuleProgressRow {
+  user_id: string;
+  trail_slug: string;
+  module_id: number;
+  completed: boolean;
+  completed_at: string;
+  quiz_score: number;
+  quiz_total: number;
+}
+
 
 interface RemoteForumBackfillReport {
   userId: string;
@@ -62,6 +73,41 @@ function runRemoteWrite(
   void writer().catch((error) => {
     console.error(`[remotePersistence] ${operation} failed`, error);
   });
+}
+
+export async function fetchRemoteModuleProgress(
+  userId: string,
+): Promise<RemoteModuleProgressRow[]> {
+  const normalizedUserId = userId.trim();
+  if (!normalizedUserId || import.meta.env.MODE === "test") {
+    return [];
+  }
+
+  if (!shouldReadFromSupabase()) {
+    return [];
+  }
+
+  const client = getSupabaseClient();
+  if (!client) {
+    return [];
+  }
+
+  try {
+    const { data, error } = await client
+      .from("module_progress")
+      .select("*")
+      .eq("user_id", normalizedUserId);
+
+    if (error) {
+      console.error("[remotePersistence] fetchRemoteModuleProgress error", error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (err) {
+    console.error("[remotePersistence] fetchRemoteModuleProgress exception", err);
+    return [];
+  }
 }
 
 export function queueRemoteModuleProgressSync(

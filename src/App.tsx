@@ -47,14 +47,23 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+import { syncRemoteProgressToLocal } from "./lib/userData.ts";
+
 function ClerkSupabaseIntegration() {
-  const { getToken } = useAuth();
+  const { getToken, userId } = useAuth();
   React.useEffect(() => {
     setSupabaseTokenGetter(() => getToken({ template: "supabase" }));
     return () => {
       setSupabaseTokenGetter(null);
     };
   }, [getToken]);
+
+  React.useEffect(() => {
+    if (userId) {
+      syncRemoteProgressToLocal(userId).catch(console.error);
+    }
+  }, [userId]);
+
   return null;
 }
 
