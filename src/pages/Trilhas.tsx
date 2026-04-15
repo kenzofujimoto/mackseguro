@@ -45,7 +45,7 @@ export default function Trilhas() {
                 <Link
                   key={trilha.id}
                   to={`/trilhas/${trilha.slug}`}
-                  className="card-mk group flex flex-col p-6"
+                  className="card-mk interactive-card group flex flex-col p-6"
                 >
                   <div className="mb-4 flex items-center gap-3">
                     <div className={`rounded-lg p-2.5 ${cores.bg}`}>

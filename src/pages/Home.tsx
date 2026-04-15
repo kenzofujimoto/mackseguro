@@ -101,14 +101,14 @@ export default function Home() {
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link to="/auth/sign-in" className="btn-outline justify-center px-6 py-3 text-base">
+              <Link to="/auth/sign-in" className="btn-outline btn-lg justify-center">
                 Entrar
               </Link>
-              <Link to="/trilhas" className="btn-primary justify-center px-6 py-3 text-base">
+              <Link to="/trilhas" className="btn-primary btn-lg justify-center">
                 Iniciar agora
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link to="/sobre" className="btn-outline justify-center px-6 py-3 text-base">
+              <Link to="/sobre" className="btn-outline btn-lg justify-center">
                 Conhecer o projeto
               </Link>
             </div>
@@ -225,7 +225,7 @@ export default function Home() {
               const progress = getTrailProgress(trilha.slug, trilha.modulos.length);
 
               return (
-                <Link key={trilha.id} to={`/trilhas/${trilha.slug}`} className="card-mk group block p-5">
+                <Link key={trilha.id} to={`/trilhas/${trilha.slug}`} className="card-mk interactive-card group block p-5">
                   <div className="mb-4 flex items-center justify-between">
                     <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--color-mack-bg)] text-[var(--color-mack)]">
                       <Icon className="h-5 w-5" />

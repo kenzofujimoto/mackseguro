@@ -120,7 +120,7 @@ export default function TrilhaDetalhe() {
                 <li key={modulo.id}>
                   <Link
                     to={`/trilhas/${slug}/modulo/${modulo.id}`}
-                    className="card-mk group block p-5 cursor-pointer"
+                    className="card-mk interactive-card group block p-5"
                   >
                     <div className="flex items-start gap-4">
                       <div

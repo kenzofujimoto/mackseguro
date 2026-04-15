@@ -40,7 +40,7 @@ export default class AppErrorBoundary extends Component<
         </p>
         <button
           type="button"
-          className="mt-6 rounded-md bg-[var(--color-mack)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--color-mack-dark)]"
+          className="btn-dark btn-sm mt-6"
           onClick={() => window.location.reload()}
         >
           Recarregar página

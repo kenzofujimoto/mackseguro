@@ -17,6 +17,7 @@ import ModuloConteudo from "./pages/ModuloConteudo.tsx";
 import AuthSignIn from "./pages/AuthSignIn.tsx";
 import AuthSignUp from "./pages/AuthSignUp.tsx";
 import CourseAccessGate from "./components/auth/CourseAccessGate.tsx";
+import Perfil from "./pages/Perfil.tsx";
 
 function NotFoundPage() {
   return (
@@ -41,7 +42,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
-      <main className="flex-1">{children}</main>
+      <main className="page-shell flex-1">{children}</main>
       <Footer />
     </div>
   );
@@ -87,6 +88,7 @@ function App() {
       <Route path="/pilulas" element={<AppLayout><Pilulas /></AppLayout>} />
       <Route path="/eventos" element={<AppLayout><Eventos /></AppLayout>} />
       <Route path="/sobre" element={<AppLayout><Sobre /></AppLayout>} />
+      <Route path="/perfil" element={<AppLayout><CourseAccessGate><Perfil /></CourseAccessGate></AppLayout>} />
       <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>

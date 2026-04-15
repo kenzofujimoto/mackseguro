@@ -429,7 +429,7 @@ export default function ModuloConteudo() {
       />
 
       <section className="min-h-screen bg-[var(--color-bg-surface)]">
-        <div className="border-b border-[var(--color-border)] bg-[var(--color-bg)] px-4">
+        <div className="border-b border-[var(--color-border)] bg-[var(--color-bg)] px-4 md:hidden">
           <div className="mx-auto flex max-w-7xl items-center gap-2 py-3 text-sm text-[var(--color-text-muted)]">
             <Link to="/trilhas" className="hover:text-[var(--color-text-secondary)] cursor-pointer">Trilhas</Link>
             <ChevronRight className="h-3.5 w-3.5" />
@@ -438,7 +438,7 @@ export default function ModuloConteudo() {
             <span className="text-[var(--color-text)]">Módulo {modIndex + 1}</span>
             <button
               type="button"
-              className="ml-auto rounded-md p-1.5 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-muted)] lg:hidden cursor-pointer"
+              className="icon-btn ml-auto lg:hidden"
               onClick={() => setSidebarOpen(true)}
               aria-label="Abrir navegação dos módulos"
             >
@@ -479,7 +479,7 @@ export default function ModuloConteudo() {
               <aside className="relative z-10 w-72 overflow-y-auto bg-[var(--color-bg)] p-4 shadow-lg">
                 <div className="mb-4 flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-[var(--color-text)]">Módulos</h3>
-                  <button type="button" onClick={() => setSidebarOpen(false)} className="rounded-md p-1.5 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-muted)] cursor-pointer" aria-label="Fechar">
+                  <button type="button" onClick={() => setSidebarOpen(false)} className="icon-btn" aria-label="Fechar">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
@@ -592,7 +592,9 @@ export default function ModuloConteudo() {
                       {q.opcoes.map((opcao, oi) => {
                         const selected = selectedAnswers[q.id] === oi;
                         const isCorrect = oi === q.respostaCorreta;
-                        let optionStyle = "border-[var(--color-border)] hover:border-[var(--color-mack)]/30 hover:bg-[var(--color-mack-bg)]/50";
+                        let optionStyle = quizSubmitted
+                          ? "border-[var(--color-border)] bg-[var(--color-bg-surface)]"
+                          : "border-[var(--color-border)] hover:border-[var(--color-mack)]/30 hover:bg-[var(--color-mack-bg)]/50";
                         if (selected && !quizSubmitted) {
                           optionStyle = "border-[var(--color-mack)] bg-[var(--color-mack-bg)]";
                         } else if (quizSubmitted && selected && isCorrect) {
@@ -604,8 +606,8 @@ export default function ModuloConteudo() {
                         }
 
                         return (
-                          <label key={oi} className={`flex items-center gap-3 rounded-lg border p-3 text-sm transition-all cursor-pointer ${optionStyle}`}>
-                            <input type="radio" name={`q-${q.id}`} className="accent-[var(--color-mack)]" checked={selected} disabled={quizSubmitted} onChange={() => setSelectedAnswers((prev) => ({ ...prev, [q.id]: oi }))} />
+                          <label key={oi} className={`flex items-center gap-3 rounded-lg border p-3 text-sm transition-all ${quizSubmitted ? "cursor-not-allowed opacity-80" : "cursor-pointer"} ${optionStyle}`}>
+                            <input type="radio" name={`q-${q.id}`} className="h-4 w-4 accent-[var(--color-mack)]" checked={selected} disabled={quizSubmitted} onChange={() => setSelectedAnswers((prev) => ({ ...prev, [q.id]: oi }))} />
                             <span className="flex-1 text-[var(--color-text-secondary)]">{opcao}</span>
                             {quizSubmitted && selected && isCorrect && <CheckCircle2 className="h-4 w-4 text-[var(--color-emerald)]" />}
                             {quizSubmitted && selected && !isCorrect && <XCircle className="h-4 w-4 text-[var(--color-rose)]" />}
@@ -619,12 +621,12 @@ export default function ModuloConteudo() {
 
               <div className="mt-6 flex gap-3">
                 {!quizSubmitted ? (
-                  <button type="button" className="btn-primary" disabled={Object.keys(selectedAnswers).length < conteudo.questoes.length} onClick={handleSubmitQuiz}>
+                  <button type="button" className="btn-primary btn-sm" disabled={Object.keys(selectedAnswers).length < conteudo.questoes.length} onClick={handleSubmitQuiz}>
                     Verificar Respostas
                     <CheckCircle2 className="h-4 w-4" />
                   </button>
                 ) : (
-                  <button type="button" className="btn-outline" onClick={() => { setQuizSubmitted(false); setSelectedAnswers({}); }}>
+                  <button type="button" className="btn-outline btn-sm" onClick={() => { setQuizSubmitted(false); setSelectedAnswers({}); }}>
                     Tentar Novamente
                   </button>
                 )}
@@ -652,7 +654,7 @@ export default function ModuloConteudo() {
                     Entre com sua conta para comentar nesta aula, responder colegas, curtir e denunciar conteúdos inadequados.
                   </p>
                   <SignInButton mode="redirect" forceRedirectUrl={`/trilhas/${trilha.slug}/modulo/${modulo.id}`}>
-                    <button type="button" className="btn-primary mt-3 text-sm">
+                    <button type="button" className="btn-primary btn-sm mt-3">
                       Entrar para comentar
                     </button>
                   </SignInButton>
@@ -662,7 +664,7 @@ export default function ModuloConteudo() {
               {isLoaded && isSignedIn && (
                 <div className="mb-6 rounded-xl border border-[var(--color-border)] p-4">
                   <textarea
-                    className="w-full resize-none rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] p-3 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-mack)] focus:outline-none"
+                    className="field-control"
                     rows={3}
                     placeholder="Faça uma pergunta ou compartilhe uma dúvida..."
                     value={forumText}
@@ -672,7 +674,7 @@ export default function ModuloConteudo() {
                     <span className="text-xs text-[var(--color-text-muted)]">
                       Comentando como {currentUserName}
                     </span>
-                    <button type="button" className="btn-primary text-sm" onClick={handlePublishComment}>
+                    <button type="button" className="btn-primary btn-sm" onClick={handlePublishComment}>
                       <MessageSquare className="h-4 w-4" />
                       Publicar
                     </button>
@@ -681,7 +683,7 @@ export default function ModuloConteudo() {
               )}
 
               {forumError && (
-                <p className="mb-4 rounded-md border border-[var(--color-rose)]/30 bg-[var(--color-rose-light)] px-3 py-2 text-xs text-[var(--color-rose)]">
+                <p role="alert" aria-live="assertive" className="mb-4 rounded-md border border-[var(--color-rose)]/30 bg-[var(--color-rose-light)] px-3 py-2 text-xs text-[var(--color-rose)]">
                   {forumError}
                 </p>
               )}
@@ -724,10 +726,10 @@ export default function ModuloConteudo() {
                           <div className="flex flex-wrap items-center gap-2">
                             <button
                               type="button"
-                              className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                              className={`btn-sm ${
                                 isLikedByCurrentUser
-                                  ? "border-[var(--color-mack)] bg-[var(--color-mack-bg)] text-[var(--color-mack)]"
-                                  : "border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+                                  ? "btn-outline border-[var(--color-mack)] bg-[var(--color-mack-bg)] text-[var(--color-mack)]"
+                                  : "btn-neutral"
                               }`}
                               onClick={() => handleToggleLike(comment.id)}
                             >
@@ -737,7 +739,7 @@ export default function ModuloConteudo() {
 
                             <button
                               type="button"
-                              className="inline-flex items-center gap-1 rounded-md border border-[var(--color-border)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text)]"
+                              className="btn-neutral btn-sm"
                               onClick={() => {
                                 setActiveReplyId(activeReplyId === comment.id ? null : comment.id);
                                 setReplyText("");
@@ -749,7 +751,7 @@ export default function ModuloConteudo() {
 
                             <button
                               type="button"
-                              className="inline-flex items-center gap-1 rounded-md border border-[var(--color-border)] px-2.5 py-1 text-xs font-medium text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text)]"
+                              className="btn-neutral btn-sm"
                               onClick={() => {
                                 setReportingCommentId(reportingCommentId === comment.id ? null : comment.id);
                                 setReportReason("spam");
@@ -767,7 +769,7 @@ export default function ModuloConteudo() {
                           {activeReplyId === comment.id && (
                             <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-muted)] p-3">
                               <textarea
-                                className="w-full resize-none rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] p-2.5 text-sm text-[var(--color-text)] focus:border-[var(--color-mack)] focus:outline-none"
+                                className="field-control"
                                 rows={2}
                                 placeholder="Escreva sua resposta"
                                 value={replyText}
@@ -776,7 +778,7 @@ export default function ModuloConteudo() {
                               <div className="mt-2 flex justify-end gap-2">
                                 <button
                                   type="button"
-                                  className="btn-outline text-xs"
+                                  className="btn-outline btn-sm"
                                   onClick={() => {
                                     setActiveReplyId(null);
                                     setReplyText("");
@@ -786,7 +788,7 @@ export default function ModuloConteudo() {
                                 </button>
                                 <button
                                   type="button"
-                                  className="btn-primary text-xs"
+                                  className="btn-primary btn-sm"
                                   onClick={() => handleReply(comment.id)}
                                 >
                                   Enviar resposta
@@ -802,7 +804,7 @@ export default function ModuloConteudo() {
                               </label>
                               <select
                                 id={`report-${comment.id}`}
-                                className="w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] px-2.5 py-2 text-sm text-[var(--color-text)]"
+                                className="field-control"
                                 value={reportReason}
                                 onChange={(event) => setReportReason(event.target.value as ReportReason)}
                               >
@@ -816,14 +818,14 @@ export default function ModuloConteudo() {
                               <div className="mt-2 flex justify-end gap-2">
                                 <button
                                   type="button"
-                                  className="btn-outline text-xs"
+                                  className="btn-outline btn-sm"
                                   onClick={() => setReportingCommentId(null)}
                                 >
                                   Cancelar
                                 </button>
                                 <button
                                   type="button"
-                                  className="btn-primary text-xs"
+                                  className="btn-primary btn-sm"
                                   onClick={() => handleReport(comment.id)}
                                 >
                                   <AlertTriangle className="h-3.5 w-3.5" />
@@ -870,7 +872,7 @@ export default function ModuloConteudo() {
 
             <div className="flex items-center justify-between">
               {prevMod ? (
-                <Link to={`/trilhas/${trilha.slug}/modulo/${prevMod.id}`} className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-2.5 text-sm font-medium text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text)] cursor-pointer">
+                <Link to={`/trilhas/${trilha.slug}/modulo/${prevMod.id}`} className="btn-neutral btn-sm gap-2">
                   <ArrowLeft className="h-4 w-4" />
                   <span className="hidden sm:inline">{prevMod.titulo}</span>
                   <span className="sm:hidden">Anterior</span>
@@ -878,13 +880,13 @@ export default function ModuloConteudo() {
               ) : <div />}
 
               {nextMod ? (
-                <Link to={`/trilhas/${trilha.slug}/modulo/${nextMod.id}`} className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-4 py-2.5 text-sm font-medium text-[var(--color-mack)] transition-colors cursor-pointer">
+                <Link to={`/trilhas/${trilha.slug}/modulo/${nextMod.id}`} className="btn-neutral btn-sm gap-2 text-[var(--color-mack)]">
                   <span className="hidden sm:inline">{nextMod.titulo}</span>
                   <span className="sm:hidden">Próximo</span>
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               ) : (
-                <Link to={`/trilhas/${trilha.slug}`} className="btn-primary text-sm">
+                <Link to={`/trilhas/${trilha.slug}`} className="btn-primary btn-sm">
                   Concluir Trilha
                   <CheckCircle2 className="h-4 w-4" />
                 </Link>

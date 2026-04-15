@@ -76,7 +76,7 @@ export default function Materiais() {
                       download
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="btn-primary px-4 py-2 text-sm cursor-pointer"
+                      className="btn-primary btn-sm"
                     >
                       <Download className="h-4 w-4" />
                       Baixar

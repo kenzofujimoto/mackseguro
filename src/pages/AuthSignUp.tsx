@@ -1,6 +1,30 @@
 import { SignUp } from "@clerk/react";
 import Seo from "../components/seo/Seo.tsx";
 
+const authAppearance = {
+  variables: {
+    colorPrimary: "#CC141D",
+    colorText: "#555555",
+    colorTextSecondary: "#666666",
+    colorBackground: "#FFFFFF",
+    colorInputBackground: "#FFFFFF",
+    colorInputText: "#555555",
+    borderRadius: "10px",
+    fontFamily: "Roboto, Arial, sans-serif",
+  },
+  elements: {
+    card: "!shadow-none !border !border-[var(--color-border)] !bg-[var(--color-bg-surface)]",
+    headerTitle: "!text-[var(--color-text)]",
+    headerSubtitle: "!text-[var(--color-text-secondary)]",
+    formButtonPrimary: "!h-11 !rounded-[8px] !bg-[var(--color-mack)] !shadow-none hover:!bg-[var(--color-mack-dark)]",
+    formFieldLabel: "!text-[var(--color-text-secondary)] !font-medium",
+    formFieldInput: "!h-11 !rounded-[10px] !border !border-[var(--color-border)] focus:!border-[var(--color-mack)] focus:!shadow-none",
+    socialButtonsBlockButton: "!h-11 !rounded-[10px] !border !border-[var(--color-border)] hover:!bg-[var(--color-bg-muted)]",
+    footerActionLink: "!text-[var(--color-mack)] hover:!text-[var(--color-mack-dark)]",
+    dividerLine: "!bg-[var(--color-border)]",
+  },
+} as const;
+
 export default function AuthSignUp() {
   return (
     <>
@@ -25,7 +49,12 @@ export default function AuthSignUp() {
           </header>
 
           <div className="card-mk p-4 sm:p-6">
-            <SignUp routing="path" path="/auth/sign-up" signInUrl="/auth/sign-in" />
+            <SignUp
+              routing="path"
+              path="/auth/sign-up"
+              signInUrl="/auth/sign-in"
+              appearance={authAppearance}
+            />
           </div>
         </div>
       </section>
