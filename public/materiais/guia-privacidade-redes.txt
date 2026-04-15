@@ -1,0 +1,13 @@
+Guia de Configuracao de Privacidade
+
+WhatsApp:
+- Oculte foto para contatos
+- Restrinja visto por ultimo
+
+Instagram:
+- Conta privada
+- Controle de mencoes
+
+Facebook:
+- Publicacoes somente para amigos
+- Revisao de aplicativos conectados

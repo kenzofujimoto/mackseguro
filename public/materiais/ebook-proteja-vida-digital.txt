@@ -1,0 +1,9 @@
+E-book: Proteja sua Vida Digital
+
+Este material resume boas praticas para proteger contas, dados pessoais e dispositivos no dia a dia.
+
+Checklist rapido:
+- Senhas unicas por servico
+- 2FA ativo
+- Backup recorrente
+- Atualizacoes automaticas habilitadas

@@ -1,11 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { UserButton, useUser } from "@clerk/react";
 import {
-  Shield,
   Menu,
   X,
-  Moon,
-  Sun,
   Home,
   BookOpen,
   FolderDown,
@@ -23,53 +21,40 @@ const navLinks = [
   { to: "/sobre", label: "Sobre", icon: Info },
 ] as const;
 
+const LOGO_URL = "https://www.mackenzie.br/fileadmin/CONFIGURACOES/DEFAULT_21/Resources/Public/Template/img/logo/mackenzie_w.svg";
+const LOGO_ALT = "[Instituto Presbiteriano Mackenzie]";
+
 export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [dark, setDark] = useState(
-    () => typeof document !== "undefined" && document.documentElement.classList.contains("dark"),
-  );
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (dark) {
-      root.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      root.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [dark]);
+  const { isLoaded, isSignedIn } = useUser();
+  const showAuthCtas = !isLoaded || !isSignedIn;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-bg)] shadow-sm">
-      {/* Faixa vermelha Mackenzie */}
-      <div className="h-1 bg-[var(--color-mack)]" />
-
-      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6">
-        {/* Logo */}
+    <header className="header-text-white sticky top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-dark)]">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
         <NavLink
           to="/"
-          className="flex items-center gap-2.5 py-3"
+          className="inline-flex items-center"
           onClick={() => setMobileOpen(false)}
         >
-          <Shield className="h-7 w-7 text-[var(--color-mack)]" strokeWidth={2.2} />
-          <span className="text-lg font-bold text-[var(--color-text)] tracking-tight">
-            Mack<span className="text-[var(--color-mack)]">Seguro</span>
-          </span>
+          <img
+            src={LOGO_URL}
+            alt={LOGO_ALT}
+            className="h-8 w-auto brightness-0 invert sm:h-9"
+          />
         </NavLink>
 
-        {/* Links desktop */}
-        <ul className="hidden items-center gap-1 md:flex">
+        <ul className="hidden items-center gap-1.5 md:flex">
           {navLinks.map((link) => (
             <li key={link.to}>
               <NavLink
                 to={link.to}
                 end={link.to === "/"}
                 className={({ isActive }) =>
-                  `px-3 py-4 text-sm font-medium border-b-2 transition-colors duration-150 cursor-pointer ${
+                  `rounded-[3px] px-3.5 py-2 text-sm font-semibold transition-colors duration-150 cursor-pointer ${
                     isActive
-                      ? "border-[var(--color-mack)] text-[var(--color-mack)]"
-                      : "border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+                      ? "bg-[var(--color-mack)] text-white"
+                      : "text-white hover:bg-white/10 hover:text-white"
                   }`
                 }
               >
@@ -79,18 +64,33 @@ export default function Navbar() {
           ))}
         </ul>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+          {showAuthCtas ? (
+            <>
+              <NavLink
+                to="/auth/sign-in"
+                className="inline-flex rounded-[3px] border border-white/80 bg-transparent px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/10 sm:px-3 sm:py-2 sm:text-sm cursor-pointer"
+                onClick={() => setMobileOpen(false)}
+              >
+                Entrar
+              </NavLink>
+              <NavLink
+                to="/auth/sign-up"
+                className="inline-flex rounded-[3px] border border-white bg-[var(--color-mack-dark)] px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#8F1413] sm:px-3 sm:py-2 sm:text-sm cursor-pointer"
+                onClick={() => setMobileOpen(false)}
+              >
+                Criar conta
+              </NavLink>
+            </>
+          ) : (
+            <div className="hidden md:block">
+              <UserButton />
+            </div>
+          )}
+
           <button
             type="button"
-            className="rounded-md p-2 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-muted)] hover:text-[var(--color-text)] cursor-pointer"
-            onClick={() => setDark((prev) => !prev)}
-            aria-label={dark ? "Modo claro" : "Modo noturno"}
-          >
-            {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </button>
-          <button
-            type="button"
-            className="rounded-md p-2 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-muted)] hover:text-[var(--color-text)] md:hidden cursor-pointer"
+            className="rounded-[3px] p-2 text-white hover:bg-white/10 md:hidden cursor-pointer"
             onClick={() => setMobileOpen((prev) => !prev)}
             aria-label={mobileOpen ? "Fechar menu" : "Abrir menu"}
             aria-expanded={mobileOpen}
@@ -99,21 +99,44 @@ export default function Navbar() {
           </button>
         </div>
       </nav>
-
-      {/* Menu mobile */}
       {mobileOpen && (
-        <div className="border-t border-[var(--color-border)] bg-[var(--color-bg)] md:hidden">
-          <ul className="flex flex-col gap-0.5 px-3 py-2">
+        <div className="border-t border-white/25 bg-[var(--color-dark)] md:hidden">
+          <ul className="flex flex-col gap-1 px-3 py-3">
+            <li className="px-3 py-2">
+              {showAuthCtas ? (
+                <>
+                  <NavLink
+                    to="/auth/sign-in"
+                    className="inline-flex w-full justify-center rounded-[3px] border border-white/80 bg-transparent px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10 cursor-pointer"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Entrar na conta
+                  </NavLink>
+                  <NavLink
+                    to="/auth/sign-up"
+                    className="mt-2 inline-flex w-full justify-center rounded-[3px] border border-white bg-[var(--color-mack-dark)] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#8F1413] cursor-pointer"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Criar conta
+                  </NavLink>
+                </>
+              ) : (
+                <div className="flex justify-center">
+                  <UserButton />
+                </div>
+              )}
+            </li>
+
             {navLinks.map((link) => (
               <li key={link.to}>
                 <NavLink
                   to={link.to}
                   end={link.to === "/"}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
+                    `flex items-center gap-3 rounded-[3px] px-3 py-2.5 text-sm font-semibold transition-colors cursor-pointer ${
                       isActive
-                        ? "bg-[var(--color-mack-bg)] text-[var(--color-mack)]"
-                        : "text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-muted)] hover:text-[var(--color-text)]"
+                        ? "bg-[var(--color-mack-dark)] text-white"
+                        : "text-white hover:bg-white/10 hover:text-white"
                     }`
                   }
                   onClick={() => setMobileOpen(false)}

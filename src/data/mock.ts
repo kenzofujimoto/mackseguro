@@ -77,6 +77,7 @@ export interface ConteudoModulo {
   moduloId: number;
   videoTitulo: string;
   videoDuracao: string;
+  videoUrl?: string;
   conteudo: string[];
   questoes: Questao[];
   forum: PostForum[];
@@ -202,7 +203,7 @@ export const materiais: Material[] = [
     descricao:
       "Guia prático com dicas essenciais de segurança para usuários de todas as idades.",
     tamanho: "2.4 MB",
-    url: "#",
+    url: "/materiais/cartilha-seguranca-internet.txt",
     cor: "green",
   },
   {
@@ -212,7 +213,7 @@ export const materiais: Material[] = [
     descricao:
       "Material completo sobre proteção de dados pessoais e privacidade online.",
     tamanho: "5.1 MB",
-    url: "#",
+    url: "/materiais/ebook-proteja-vida-digital.txt",
     cor: "blue",
   },
   {
@@ -222,7 +223,7 @@ export const materiais: Material[] = [
     descricao:
       "Visualize passo a passo como funcionam os golpes digitais mais comuns.",
     tamanho: "1.2 MB",
-    url: "#",
+    url: "/materiais/infografico-anatomia-golpe.svg",
     cor: "orange",
   },
   {
@@ -232,7 +233,7 @@ export const materiais: Material[] = [
     descricao:
       "Passo a passo para configurar privacidade no WhatsApp, Instagram e Facebook.",
     tamanho: "3.8 MB",
-    url: "#",
+    url: "/materiais/guia-privacidade-redes.txt",
     cor: "purple",
   },
 ];
@@ -318,6 +319,7 @@ export const conteudosModulos: ConteudoModulo[] = [
     moduloId: 1,
     videoTitulo: "Introdução à Segurança Digital",
     videoDuracao: "12:34",
+    videoUrl: "https://www.youtube.com/embed/bPVaOlJ6ln0",
     conteudo: [
       "Segurança digital, também conhecida como segurança da informação, é o conjunto de práticas, processos e tecnologias projetados para proteger dados, dispositivos e redes contra acessos não autorizados, ataques e danos. Em um mundo cada vez mais conectado, entender esses conceitos é fundamental para todos — não apenas para profissionais de tecnologia.",
       "Os três pilares fundamentais da segurança da informação são conhecidos como a Tríade CIA: Confidencialidade (garantir que apenas pessoas autorizadas acessem a informação), Integridade (assegurar que os dados não sejam alterados indevidamente) e Disponibilidade (manter os sistemas e dados acessíveis quando necessário).",
@@ -407,6 +409,7 @@ export const conteudosModulos: ConteudoModulo[] = [
     moduloId: 2,
     videoTitulo: "Como Criar Senhas Realmente Seguras",
     videoDuracao: "15:22",
+    videoUrl: "https://www.youtube.com/embed/3NjQ9b3pgIg",
     conteudo: [
       "Uma senha forte é sua primeira linha de defesa no mundo digital. Infelizmente, as senhas mais usadas no Brasil ainda são '123456', 'senha' e 'brasil'. Essas senhas podem ser quebradas por programas automatizados em menos de um segundo.",
       "Para criar uma senha segura, use pelo menos 12 caracteres combinando letras maiúsculas, minúsculas, números e símbolos. Uma técnica eficiente é criar uma frase-senha: por exemplo, 'MeuCaféDas7h@Mackenzie!' é fácil de lembrar mas muito difícil de adivinhar.",
@@ -495,6 +498,7 @@ export const conteudosModulos: ConteudoModulo[] = [
     moduloId: 3,
     videoTitulo: "Identificando Golpes Digitais",
     videoDuracao: "18:45",
+    videoUrl: "https://www.youtube.com/embed/5f2R9Q8YdXA",
     conteudo: [
       "Phishing é uma das formas mais comuns de golpe digital. O criminoso se passa por uma empresa ou pessoa conhecida para enganar a vítima e roubar dados pessoais, senhas ou dinheiro. O nome vem de 'fishing' (pescar), pois o golpista 'joga a isca' esperando que alguém morda.",
       "Os principais canais de phishing são: e-mails falsos imitando bancos ou empresas, mensagens de SMS com links suspeitos (smishing), ligações telefônicas fraudulentas (vishing), e mensagens em redes sociais ou WhatsApp com ofertas falsas ou pedidos urgentes.",
@@ -563,6 +567,7 @@ export const conteudosModulos: ConteudoModulo[] = [
     moduloId: 4,
     videoTitulo: "Configurando sua Privacidade Online",
     videoDuracao: "14:10",
+    videoUrl: "https://www.youtube.com/embed/9e2NfYb8kVc",
     conteudo: [
       "Redes sociais são parte importante da nossa vida, mas compartilhar informações em excesso pode colocar sua segurança em risco. Criminosos podem usar dados públicos como localização, rotina, nome de familiares e data de nascimento para aplicar golpes ou até planejar crimes.",
       "No Instagram, ative o perfil privado em Configurações > Privacidade > Conta privada. No Facebook, revise quem pode ver suas publicações em Configurações > Privacidade. No WhatsApp, configure quem pode ver sua foto de perfil, status e 'visto por último' em Configurações > Privacidade.",
@@ -633,6 +638,7 @@ export const conteudosModulos: ConteudoModulo[] = [
     moduloId: 5,
     videoTitulo: "Protegendo seus Dispositivos e Conexões",
     videoDuracao: "16:28",
+    videoUrl: "https://www.youtube.com/embed/VNw2f8Y3R3E",
     conteudo: [
       "Redes Wi-Fi públicas (em cafés, aeroportos, shoppings) são convenientes, mas podem ser perigosas. Criminosos podem criar redes falsas com nomes similares a redes legítimas ou interceptar dados transmitidos em redes sem criptografia adequada.",
       "Para se proteger em redes públicas: evite acessar bancos ou fazer compras online, use uma VPN (Virtual Private Network) para criptografar sua conexão, verifique se os sites acessados usam HTTPS (cadeado no navegador) e desative o Wi-Fi automático no celular.",
@@ -703,6 +709,7 @@ export const conteudosModulos: ConteudoModulo[] = [
     moduloId: 1,
     videoTitulo: "Impactos do Tempo de Tela na Saúde",
     videoDuracao: "13:15",
+    videoUrl: "https://www.youtube.com/embed/2fLz2bNn9bI",
     conteudo: [
       "Brasileiros passam em média mais de 9 horas por dia conectados à internet — um dos maiores índices do mundo. O uso excessivo de telas está associado a problemas como insônia, ansiedade, depressão, dores de cabeça e problemas posturais.",
       "A luz azul emitida por telas pode interferir na produção de melatonina, o hormônio do sono. Especialistas recomendam evitar telas pelo menos 1 hora antes de dormir. Ative o filtro de luz azul (modo noturno) no celular e computador para reduzir esse impacto.",
@@ -770,6 +777,7 @@ export const conteudosModulos: ConteudoModulo[] = [
     moduloId: 2,
     videoTitulo: "Combatendo o Cyberbullying",
     videoDuracao: "17:30",
+    videoUrl: "https://www.youtube.com/embed/pk2Va1T7b3Q",
     conteudo: [
       "Cyberbullying é o uso de tecnologia para intimidar, humilhar ou ameaçar alguém de forma repetida. Diferente do bullying presencial, o cyberbullying pode acontecer 24 horas por dia e alcançar um público muito maior. As vítimas frequentemente sentem que não há escapatória.",
       "As formas mais comuns incluem: mensagens ofensivas ou ameaçadoras, divulgação de fotos ou vídeos sem consentimento, criação de perfis falsos para difamar, exclusão intencional de grupos online e compartilhamento de rumores ou informações privadas.",
@@ -838,6 +846,7 @@ export const conteudosModulos: ConteudoModulo[] = [
     moduloId: 3,
     videoTitulo: "Como Verificar Informações Online",
     videoDuracao: "14:55",
+    videoUrl: "https://www.youtube.com/embed/sJ6P6A5A8hE",
     conteudo: [
       "Desinformação é a disseminação intencional de informações falsas ou enganosas. As fake news se espalham rapidamente porque apelam para emoções fortes como medo, raiva e indignação. Estudos mostram que notícias falsas se espalham até 6 vezes mais rápido que as verdadeiras nas redes sociais.",
       "Para verificar uma informação antes de compartilhar, use a técnica SIFT: Stop (pare antes de reagir), Investigate the source (investigue a fonte), Find better coverage (busque cobertura em outras fontes confiáveis) e Trace claims (rastreie a origem da informação).",
@@ -906,6 +915,7 @@ export const conteudosModulos: ConteudoModulo[] = [
     moduloId: 4,
     videoTitulo: "Criando Hábitos Digitais Saudáveis",
     videoDuracao: "11:40",
+    videoUrl: "https://www.youtube.com/embed/7M2B2LQf9nU",
     conteudo: [
       "O equilíbrio digital não significa abandonar a tecnologia, mas sim usá-la de forma intencional e consciente. O objetivo é que a tecnologia trabalhe a seu favor, não contra sua saúde e bem-estar.",
       "Dicas práticas para reduzir o uso excessivo: ative os relatórios de tempo de tela (Bem-Estar Digital no Android, Tempo de Uso no iPhone), defina limites diários para apps de redes sociais, desative notificações não essenciais, remova apps das telas iniciais e estabeleça 'zonas livres de tela' (como na mesa de jantar).",

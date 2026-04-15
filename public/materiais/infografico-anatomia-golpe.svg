@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" role="img" aria-label="Infografico: Anatomia de um golpe">
+  <rect width="960" height="540" fill="#fff5f5"/>
+  <rect x="40" y="40" width="880" height="460" rx="20" fill="#ffffff" stroke="#ab181c" stroke-width="3"/>
+  <text x="70" y="95" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#ab181c">Infografico: Anatomia de um Golpe</text>
+  <text x="70" y="140" font-family="Arial, sans-serif" font-size="20" fill="#111827">1. Isca: mensagem urgente com promessa ou ameaca</text>
+  <text x="70" y="185" font-family="Arial, sans-serif" font-size="20" fill="#111827">2. Clique: link falso imitando servico confiavel</text>
+  <text x="70" y="230" font-family="Arial, sans-serif" font-size="20" fill="#111827">3. Coleta: formulario para roubar senha e dados</text>
+  <text x="70" y="275" font-family="Arial, sans-serif" font-size="20" fill="#111827">4. Impacto: invasao de conta, fraude e perdas financeiras</text>
+  <text x="70" y="335" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#ab181c">Como evitar:</text>
+  <text x="90" y="375" font-family="Arial, sans-serif" font-size="18" fill="#111827">- Verificar remetente e URL antes de clicar</text>
+  <text x="90" y="405" font-family="Arial, sans-serif" font-size="18" fill="#111827">- Nao compartilhar codigos de verificacao</text>
+  <text x="90" y="435" font-family="Arial, sans-serif" font-size="18" fill="#111827">- Confirmar em canal oficial da empresa</text>
+</svg>

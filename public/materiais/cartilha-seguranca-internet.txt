@@ -1,0 +1,7 @@
+Cartilha de Seguranca para Internet - MackSeguro
+
+1. Use senhas fortes e unicas.
+2. Ative autenticacao em dois fatores.
+3. Desconfie de mensagens urgentes pedindo dados.
+4. Mantenha sistema e aplicativos atualizados.
+5. Revise configuracoes de privacidade nas redes sociais.
