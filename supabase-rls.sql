@@ -11,28 +11,30 @@ DROP TABLE IF EXISTS module_progress CASCADE;
 
 -- 1. Cria a tabela de comentários do fórum
 CREATE TABLE IF NOT EXISTS forum_comments (
-  comment_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  module_id text NOT NULL,
+  id text PRIMARY KEY,
   trail_slug text NOT NULL,
-  user_id text NOT NULL,
+  module_id integer NOT NULL,
+  parent_id text REFERENCES forum_comments(id) ON DELETE CASCADE,
+  author_id text NOT NULL,
   author_name text NOT NULL,
+  author_initials text NOT NULL,
   content text NOT NULL,
-  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+  created_at timestamp with time zone NOT NULL,
+  legacy_reply_count integer DEFAULT 0
 );
 
 -- 2. Cria a tabela de curtidas nos comentários
 CREATE TABLE IF NOT EXISTS forum_comment_likes (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  comment_id uuid NOT NULL REFERENCES forum_comments(comment_id) ON DELETE CASCADE,
+  comment_id text NOT NULL REFERENCES forum_comments(id) ON DELETE CASCADE,
   user_id text NOT NULL,
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
-  UNIQUE(comment_id, user_id)
+  PRIMARY KEY (comment_id, user_id)
 );
 
 -- 3. Cria a tabela de denúncias (Reports) de comentários
 CREATE TABLE IF NOT EXISTS forum_comment_reports (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  comment_id uuid NOT NULL REFERENCES forum_comments(comment_id) ON DELETE CASCADE,
+  comment_id text NOT NULL REFERENCES forum_comments(id) ON DELETE CASCADE,
   user_id text NOT NULL,
   reason text NOT NULL,
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
@@ -44,7 +46,7 @@ CREATE TABLE IF NOT EXISTS module_progress (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id text NOT NULL,
   trail_slug text NOT NULL,
-  module_id text NOT NULL,
+  module_id integer NOT NULL,
   completed boolean DEFAULT false,
   completed_at timestamp with time zone,
   quiz_score integer DEFAULT 0,
@@ -79,12 +81,12 @@ USING (auth.role() = 'authenticated');
 -- Inserção: O usuário só pode inserir um comentário no nome dele
 CREATE POLICY "Inserção para o próprio usuário"
 ON forum_comments FOR INSERT
-WITH CHECK (requesting_user_id() = user_id);
+WITH CHECK (requesting_user_id() = author_id);
 
 -- Atualização/Exclusão: O usuário só pode alterar/excluir o próprio comentário
 CREATE POLICY "Atualização/Exclusão do próprio comentário"
 ON forum_comments FOR ALL
-USING (requesting_user_id() = user_id);
+USING (requesting_user_id() = author_id);
 
 
 -- Políticas para forum_comment_likes

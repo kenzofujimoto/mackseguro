@@ -242,8 +242,9 @@ export async function syncRemoteProgressToLocal(userId: string): Promise<void> {
   const remoteKeys = new Set<string>();
 
   for (const row of rows) {
-    if (!row.trail_slug || typeof row.module_id !== "number") continue;
-    const key = moduleKey(row.trail_slug, row.module_id);
+    const modId = Number(row.module_id);
+    if (!row.trail_slug || Number.isNaN(modId)) continue;
+    const key = moduleKey(row.trail_slug, modId);
     remoteKeys.add(key);
     
     if (row.completed) {
