@@ -96,9 +96,13 @@ export function getSupabaseClient(
       ): Promise<Response> => {
         const headers = new Headers(options.headers);
         if (customTokenGetter) {
-          const token = await customTokenGetter();
-          if (token) {
-            headers.set("Authorization", `Bearer ${token}`);
+          try {
+            const token = await customTokenGetter();
+            if (token) {
+              headers.set("Authorization", `Bearer ${token}`);
+            }
+          } catch (e) {
+            console.error("[supabaseConfig] Expected error getting auth token:", e);
           }
         }
         return fetch(url, { ...options, headers });
