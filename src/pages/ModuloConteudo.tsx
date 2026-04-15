@@ -28,6 +28,7 @@ import {
   toggleRemoteForumLike,
 } from "../lib/forumRemote.ts";
 import {
+  addForumComment,
   getForumComments,
   isForumCommentHidden,
   isModuleCompleted,
