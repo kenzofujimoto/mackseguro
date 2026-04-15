@@ -19,6 +19,7 @@ import {
 import { trilhas, conteudosModulos, corMap } from "../data/mock.ts";
 import type { CorKey } from "../data/mock.ts";
 import Seo from "../components/seo/Seo.tsx";
+import { useUserDataRefresh } from "../hooks/useUserDataRefresh.ts";
 import {
   addRemoteForumComment,
   canReadForumFromRemote,
@@ -27,7 +28,6 @@ import {
   toggleRemoteForumLike,
 } from "../lib/forumRemote.ts";
 import {
-  addForumComment,
   getForumComments,
   isForumCommentHidden,
   isModuleCompleted,
@@ -70,6 +70,7 @@ export default function ModuloConteudo() {
   const modId = Number(moduloId);
   const trilha = trilhas.find((t) => t.slug === slugValue);
   const { isLoaded, isSignedIn, user } = useUser();
+  const dataVersion = useUserDataRefresh();
 
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
@@ -95,8 +96,14 @@ export default function ModuloConteudo() {
     if (!slugValue || Number.isNaN(modId)) {
       return;
     }
-
     setModuleCompleted(isModuleCompleted(slugValue, modId));
+  }, [slugValue, modId, dataVersion]);
+
+  useEffect(() => {
+    if (!slugValue || Number.isNaN(modId)) {
+      return;
+    }
+
     setSidebarOpen(false);
     setSelectedAnswers({});
     setQuizSubmitted(false);
