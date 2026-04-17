@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 
-const LOGO_URL = "https://www.mackenzie.br/fileadmin/CONFIGURACOES/DEFAULT_21/Resources/Public/Template/img/logo/mackenzie_w.svg";
-const LOGO_ALT = "[Instituto Presbiteriano Mackenzie]";
+const LOGO_URL = "/logo_FC_transparente.png";
+const LOGO_ALT = "[Faculdade de Computação e Informática - Mackenzie]";
 
 const footerLinks = [
   {
