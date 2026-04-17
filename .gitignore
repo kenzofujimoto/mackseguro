@@ -24,3 +24,7 @@ coverage
 *.sln
 *.sw?
 *.sql
+# User-specific AI context files
+.claude/
+.claude.json
+.env*
