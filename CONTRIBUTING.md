@@ -1,14 +1,22 @@
-# Guia de Contribuição — MackSeguro
+# Guia de Contribuicao — MackSeguro
 
-Obrigado por contribuir com o MackSeguro! 🎉 Este guia explica como participar do projeto de forma organizada.
+Obrigado por querer contribuir! Este guia explica tudo que voce precisa saber para participar do projeto, mesmo que seja sua primeira vez contribuindo com open source.
 
 ---
 
-## Primeiros Passos
+## Antes de Comecar
 
-### 1. Faça um Fork
+1. Leia o [Codigo de Conduta](CODE_OF_CONDUCT.md)
+2. Veja as [equipes](docs/TEAMS.md) e descubra onde voce se encaixa
+3. Procure issues com a label [`good first issue`](../../labels/good%20first%20issue) — sao tarefas simples pensadas para iniciantes
 
-Clique no botão **Fork** no canto superior direito do repositório no GitHub. Isso cria uma cópia do projeto na sua conta.
+---
+
+## Setup do Ambiente
+
+### 1. Faca um Fork
+
+Clique no botao **Fork** no canto superior direito do repositorio no GitHub. Isso cria uma copia do projeto na sua conta.
 
 ### 2. Clone o seu Fork
 
@@ -28,123 +36,190 @@ git remote add upstream https://github.com/kenzofujimoto/mackseguro.git
 ```bash
 npm install
 cp .env.example .env.local
-# Edite .env.local com sua chave do Clerk (peça ao lead técnico)
+# Edite .env.local com sua chave do Clerk (peca ao lead tecnico)
 npm run dev
 ```
+
+> **Nao tem chave do Clerk?** O app funciona sem login — voce so nao consegue testar funcionalidades que exigem autenticacao. Para conteudo e visual, nao precisa.
 
 ---
 
 ## Fluxo de Trabalho
 
-### Criando uma Branch
+### 1. Atualize sua master
 
-Sempre crie uma branch a partir da `master` atualizada:
+Antes de comecar qualquer trabalho:
 
 ```bash
 git checkout master
 git pull upstream master
+```
+
+### 2. Crie uma branch
+
+```bash
 git checkout -b tipo/descricao-curta
 ```
 
-**Convenção de nomes para branches:**
+**Convencao de nomes para branches:**
 
-| Tipo | Exemplo |
-|---|---|
-| `feat/` | `feat/certificado-pdf` |
-| `fix/` | `fix/sync-progress-bug` |
-| `docs/` | `docs/atualiza-readme` |
-| `content/` | `content/nova-trilha-lgpd` |
-| `style/` | `style/dark-mode` |
-| `test/` | `test/quiz-coverage` |
+| Tipo | Exemplo | Quando usar |
+|------|---------|-------------|
+| `feat/` | `feat/certificado-pdf` | Nova funcionalidade |
+| `fix/` | `fix/sync-progress-bug` | Correcao de bug |
+| `content/` | `content/nova-trilha-lgpd` | Novo conteudo educacional |
+| `docs/` | `docs/atualiza-readme` | Documentacao |
+| `style/` | `style/dark-mode` | Mudancas visuais |
+| `test/` | `test/quiz-coverage` | Testes |
 
-### Fazendo Commits
+### 3. Faca suas alteracoes
+
+- Faca commits pequenos e frequentes (um commit = uma mudanca logica)
+- Use a convencao de commits (veja abaixo)
+- Teste manualmente no navegador
+
+### 4. Commits
 
 Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```bash
-# Exemplos de bons commits:
 git commit -m "feat: adiciona download de certificado em PDF"
 git commit -m "fix: corrige sync de progresso entre dispositivos"
-git commit -m "content: adiciona módulo sobre LGPD na trilha de segurança"
-git commit -m "docs: atualiza instruções de setup no README"
+git commit -m "content: adiciona modulo sobre LGPD na trilha de seguranca"
+git commit -m "docs: atualiza instrucoes de setup no README"
 git commit -m "test: adiciona testes para componente QuizSection"
+git commit -m "style: melhora responsividade da pagina de trilhas"
 ```
 
-### Submetendo a PR
+**Anatomia de um bom commit:**
+- Comece com o tipo (`feat:`, `fix:`, `content:`, `docs:`, `style:`, `test:`, `refactor:`, `chore:`)
+- Use o imperativo ("adiciona", nao "adicionado" ou "adicionando")
+- Maximo 72 caracteres na primeira linha
+- Se precisar explicar mais, pule uma linha e escreva o corpo
+
+### 5. Abra uma PR
 
 ```bash
 git push origin feat/certificado-pdf
 ```
 
-No GitHub, abra um **Pull Request** para `kenzofujimoto/mackseguro` branch `master`.
+No GitHub, abra um **Pull Request** para `kenzofujimoto/mackseguro` branch `master`. O template de PR vai aparecer automaticamente — preencha todas as secoes.
 
 ---
 
 ## Checklist da PR
 
-Antes de submeter sua PR, verifique:
+Antes de submeter, verifique:
 
-- [ ] O código compila sem erros: `npm run build`
-- [ ] Os testes passam: `npm run test`
-- [ ] O commit segue a convenção de commits
-- [ ] A PR tem uma descrição clara do que foi feito e por quê
-- [ ] Para mudanças visuais: screenshots antes/depois foram anexadas
+- [ ] O codigo compila sem erros: `npm run build`
+- [ ] Testei manualmente no navegador
+- [ ] O commit segue a convencao de commits
+- [ ] A PR tem uma descricao clara do que foi feito e por que
+- [ ] Para mudancas visuais: screenshots antes/depois foram anexadas
 - [ ] Nenhuma chave API ou secret foi commitada
-- [ ] O código foi testado manualmente no navegador
+- [ ] Nao adicionei dependencias sem consultar a Equipe Core
 
 ---
 
-## Guia por Equipe
+## Guias por Equipe
 
-### Equipe Conteúdo: editando `mock.ts`
+### Equipe Conteudo: editando `mock.ts`
 
-Se você é da **Equipe 3 (Conteúdo & Pedagógico)**, provavelmente só precisará editar o arquivo `src/data/mock.ts`. Aqui está como adicionar conteúdo:
+Se voce e da **Equipe Conteudo**, provavelmente so precisa editar o arquivo `src/data/mock.ts`. Aqui esta como adicionar conteudo:
 
-#### Adicionando um módulo a uma trilha existente
+#### Adicionando um modulo a uma trilha existente
 
-1. Encontre a trilha no array `trilhas` e adicione o módulo:
+1. Encontre a trilha no array `trilhas` e adicione o modulo:
 
 ```typescript
 {
-  id: 6, // próximo ID disponível
-  titulo: "Seu Título",
-  descricao: "Descrição curta do módulo.",
+  id: 6, // proximo ID disponivel
+  titulo: "Seu Titulo",
+  descricao: "Descricao curta do modulo.",
   duracao: "15 min",
   xp: 100,
 },
 ```
 
-2. Adicione o conteúdo do módulo no array `conteudosModulos`:
+2. Adicione o conteudo do modulo no array `conteudosModulos`:
 
 ```typescript
 {
   trilhaSlug: "seguranca-digital", // slug da trilha
   moduloId: 6,                     // mesmo ID do passo 1
-  videoTitulo: "Título do Vídeo",
+  videoTitulo: "Titulo do Video",
   videoDuracao: "12:00",
   videoUrl: "https://www.youtube.com/embed/VIDEO_ID",
   conteudo: [
-    "Primeiro parágrafo do conteúdo teórico...",
-    "Segundo parágrafo...",
+    "Primeiro paragrafo do conteudo teorico...",
+    "Segundo paragrafo...",
   ],
   questoes: [
     {
       id: 1,
       pergunta: "Sua pergunta aqui?",
-      opcoes: ["Opção A", "Opção B", "Opção C", "Opção D"],
-      respostaCorreta: 0, // índice da opção correta (0 = A)
+      opcoes: ["Opcao A", "Opcao B", "Opcao C", "Opcao D"],
+      respostaCorreta: 0, // indice da opcao correta (0 = A)
     },
   ],
-  forum: [], // deixe vazio, será preenchido pelos alunos
+  forum: [], // deixe vazio, sera preenchido pelos alunos
 },
 ```
 
-> **Dica:** O `videoUrl` deve ser a URL de embed do YouTube, não a URL normal. Troque `watch?v=` por `embed/`.
+> **Dica:** O `videoUrl` deve ser a URL de embed do YouTube, nao a URL normal. Troque `watch?v=` por `embed/`.
+
+#### Nao quer configurar o ambiente local?
+
+Voce pode editar o `mock.ts` diretamente pelo GitHub:
+1. Navegue ate `src/data/mock.ts` no repositorio
+2. Clique no icone de lapis (editar)
+3. Faca suas alteracoes
+4. Clique em "Propose changes"
+5. Abra a PR
+
+Alguem da Equipe Core vai revisar, testar e fazer merge.
+
+### Equipe Frontend: trabalhando com React + Tailwind
+
+- Componentes ficam em `src/components/`, paginas em `src/pages/`
+- Usamos Tailwind CSS — classes utilitarias direto no JSX, nao CSS separado
+- Icones vem do Lucide React: `import { Icon } from "lucide-react"`
+- Sempre teste responsividade (mobile + desktop)
+- Consulte `src/index.css` para ver as cores e tokens de design disponiveis
+
+### Equipe Core: cuidados especiais
+
+- Nunca commite chaves de API ou secrets
+- Alteracoes no schema do banco (`supabase-rls.sql`) precisam de review de pelo menos 1 mantenedor
+- Novas dependencias (`npm install`) precisam de justificativa na PR
+- Mudancas em `src/lib/` podem afetar todo o app — teste amplamente
+
+### Equipe Comunidade/QA: escrevendo testes
+
+- Testes ficam proximos aos arquivos que testam ou em `src/test/`
+- Usamos Vitest + React Testing Library
+- Rode todos os testes com `npm run test`
+- Foque em testar comportamento do usuario, nao implementacao interna
 
 ---
 
-## Precisa de ajuda?
+## Usando IA para Contribuir
 
-- Abra uma **Issue** no GitHub descrevendo sua dúvida
-- Converse com o Lead Técnico (Kenzo) ou o Professor Orientador
-- Consulte o `README.md` para detalhes sobre a arquitetura
+Usar ferramentas de IA (ChatGPT, Claude, Copilot, etc.) e permitido e incentivado como ferramenta de aprendizado. Regras:
+
+1. **Entenda o que o codigo faz.** Se voce nao consegue explicar sua PR em 2 frases, voce nao entendeu o suficiente.
+2. **Declare na PR.** O template pergunta se voce usou IA — seja honesto. Nao e deducao de nota, e transparencia.
+3. **Teste tudo.** IA nao testa no navegador por voce. `npm run build` + teste manual sao obrigatorios.
+4. **Cuidado com alucinacoes.** IA inventa bibliotecas, APIs e funcoes que nao existem. Verifique se tudo que foi sugerido realmente existe no projeto.
+5. **Nao adicione dependencias sugeridas por IA** sem consultar a Equipe Core primeiro.
+
+---
+
+## Precisa de Ajuda?
+
+- Abra uma **Issue** no GitHub descrevendo sua duvida
+- Procure issues com a label [`question`](../../labels/question)
+- Converse com o Lead Tecnico ou o Professor Orientador
+- Consulte a [documentacao](docs/) para detalhes sobre a arquitetura
+
+Nenhuma pergunta e boba. Todo mundo comecou sem saber nada.
