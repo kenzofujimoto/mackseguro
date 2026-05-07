@@ -73,23 +73,23 @@ function App() {
     <>
       <ClerkSupabaseIntegration />
       <Routes>
-        <Route path="/auth/sign-in" element={<AuthSignIn />} />
-      <Route path="/auth/sign-up" element={<AuthSignUp />} />
+        <Route path="/auth/sign-in/*" element={<AuthSignIn />} />
+        <Route path="/auth/sign-up/*" element={<AuthSignUp />} />
 
-      {/* App pages — shared Navbar + Footer */}
-      <Route path="/" element={<AppLayout><Home /></AppLayout>} />
-      <Route path="/trilhas" element={<AppLayout><Trilhas /></AppLayout>} />
-      <Route path="/trilhas/:slug" element={<AppLayout><TrilhaDetalhe /></AppLayout>} />
-      <Route
-        path="/trilhas/:slug/modulo/:moduloId"
-        element={<AppLayout><CourseAccessGate><ModuloConteudo /></CourseAccessGate></AppLayout>}
-      />
-      <Route path="/materiais" element={<AppLayout><Materiais /></AppLayout>} />
-      <Route path="/pilulas" element={<AppLayout><Pilulas /></AppLayout>} />
-      <Route path="/eventos" element={<AppLayout><Eventos /></AppLayout>} />
-      <Route path="/sobre" element={<AppLayout><Sobre /></AppLayout>} />
-      <Route path="/perfil" element={<AppLayout><CourseAccessGate><Perfil /></CourseAccessGate></AppLayout>} />
-      <Route path="*" element={<NotFoundPage />} />
+        {/* App pages — shared Navbar + Footer */}
+        <Route path="/" element={<AppLayout><Home /></AppLayout>} />
+        <Route path="/trilhas" element={<AppLayout><Trilhas /></AppLayout>} />
+        <Route path="/trilhas/:slug" element={<AppLayout><TrilhaDetalhe /></AppLayout>} />
+        <Route
+          path="/trilhas/:slug/modulo/:moduloId"
+          element={<AppLayout><CourseAccessGate><ModuloConteudo /></CourseAccessGate></AppLayout>}
+        />
+        <Route path="/materiais" element={<AppLayout><Materiais /></AppLayout>} />
+        <Route path="/pilulas" element={<AppLayout><Pilulas /></AppLayout>} />
+        <Route path="/eventos" element={<AppLayout><Eventos /></AppLayout>} />
+        <Route path="/sobre" element={<AppLayout><Sobre /></AppLayout>} />
+        <Route path="/perfil" element={<AppLayout><CourseAccessGate><Perfil /></CourseAccessGate></AppLayout>} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>
   );
