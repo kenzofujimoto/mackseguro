@@ -28,7 +28,10 @@ export default function Home() {
 
   const trilhaDestaque = trilhas[0];
   const progressoDestaque = getTrailProgress(trilhaDestaque.slug, trilhaDestaque.modulos.length);
-  const minutosTotaisDestaque = trilhaDestaque.modulos.length * 15;
+  const minutosTotaisDestaque = trilhaDestaque.modulos.reduce(
+    (total, modulo) => total + parseInt(modulo.duracao, 10),
+    0,
+  );
 
   return (
     <>
