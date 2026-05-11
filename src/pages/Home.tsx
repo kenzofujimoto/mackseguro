@@ -23,6 +23,22 @@ const journeySteps = [
   },
 ] as const;
 
+function formatTotalMinutes(totalMinutes: number) {
+  if (totalMinutes < 60) {
+    return `${totalMinutes} min`;
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const remainingMinutes = totalMinutes % 60;
+  const hoursLabel = hours === 1 ? "1 hora" : `${hours} horas`;
+
+  if (remainingMinutes === 0) {
+    return hoursLabel;
+  }
+
+  return `${hoursLabel} e ${remainingMinutes} min`;
+}
+
 export default function Home() {
   useUserDataRefresh();
 
@@ -116,11 +132,7 @@ export default function Home() {
                     No total
                   </dt>
                   <dd className="mt-1.5 text-base font-semibold text-[var(--color-text)]">
-                    {minutosTotaisDestaque < 60
-                      ? `${minutosTotaisDestaque} min`
-                      : minutosTotaisDestaque < 90
-                        ? "1 hora"
-                        : `${Math.round(minutosTotaisDestaque / 60)} horas`}
+                    {formatTotalMinutes(minutosTotaisDestaque)}
                   </dd>
                 </div>
               </dl>
