@@ -21,7 +21,7 @@ const navLinks = [
   { to: "/sobre", label: "Sobre", icon: Info },
 ] as const;
 
-const LOGO_URL = "/logo_FC_transparente.png";
+const LOGO_URL = "/logo-fci-192.webp";
 const LOGO_ALT = "[Faculdade de Computação e Informática - Mackenzie]";
 
 export default function Navbar() {
