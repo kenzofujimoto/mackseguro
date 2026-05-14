@@ -1,7 +1,5 @@
 import { useRef, useState } from "react";
 import type { FC } from "react";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import { Download, Loader2 } from "lucide-react";
 import { getSupabaseClient } from "../../lib/supabaseConfig";
 import { trilhas } from "../../data/mock";
@@ -32,7 +30,7 @@ const CertificateGenerator: FC<CertificateGeneratorProps> = ({
 
     try {
       // 1. Verificação remota de segurança (evita que burlem o localstorage)
-      const supabase = getSupabaseClient();
+      const supabase = await getSupabaseClient();
       if (!supabase) throw new Error("Erro de infraestrutura: Banco de dados indisponível.");
       
       const { data, error } = await supabase
@@ -56,6 +54,11 @@ const CertificateGenerator: FC<CertificateGeneratorProps> = ({
       }
 
       // 2. Geração do PDF
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+
       const element = certificateRef.current;
       // Tornar visível temporariamente para rampa de captura
       element.style.display = "block";
