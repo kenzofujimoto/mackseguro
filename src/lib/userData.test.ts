@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   getForumComments,
+  getTrailEarnedXp,
   isForumCommentHidden,
   migrateAnonymousPosts,
   type ForumComment,
 } from "./userData.ts";
+import { fetchUserGamification } from "./gamification/badges.ts";
 
 function createComment(overrides: Partial<ForumComment>): ForumComment {
   return {
@@ -98,5 +100,53 @@ describe("isForumCommentHidden", () => {
     });
 
     expect(isForumCommentHidden(visibleComment)).toBe(false);
+  });
+});
+
+describe("total earned XP calculation", () => {
+  it("calculates XP correctly", () => {
+    const trilha = {
+      slug: "seguranca-digital",
+      totalXp: 300,
+      modulos: [
+        { id: 1, xp: 100 },
+        { id: 2, xp: 100 },
+        { id: 3, xp: 100 },
+      ],
+    } as any;
+
+    const remoteProgressRows = [
+      {
+        user_id: "user_test",
+        trail_slug: "seguranca-digital",
+        module_id: 1,
+        completed: true,
+        completed_at: "2026-04-14T12:00:00.000Z",
+        quiz_score: 8,
+        quiz_total: 10,
+      },
+      {
+        user_id: "user_test",
+        trail_slug: "seguranca-digital",
+        module_id: 2,
+        completed: true,
+        completed_at: "2026-04-14T12:00:00.000Z",
+        quiz_score: 10,
+        quiz_total: 10,
+      },
+      {
+        user_id: "user_test",
+        trail_slug: "seguranca-digital",
+        module_id: 3,
+        completed: false,
+        completed_at: "null",
+        quiz_score: 0,
+        quiz_total: 10,
+      },
+    ];
+
+    const result = getTrailEarnedXp(trilha, remoteProgressRows);
+
+    expect(result).toBe(180);
   });
 });

@@ -6,6 +6,7 @@ import {
   queueRemoteForumReportSync,
   queueRemoteModuleProgressSync,
   fetchRemoteModuleProgress,
+  type RemoteModuleProgressRow,
 } from "./remotePersistence.ts";
 
 export interface PersistedModuleProgress {
@@ -311,14 +312,27 @@ export function getTrailProgress(slug: string, totalModules: number): {
   };
 }
 
-export function getTrailEarnedXp(trilha: Trilha): number {
-  return trilha.modulos.reduce((xp, modulo) => {
-    if (isModuleCompleted(trilha.slug, modulo.id)) {
-      return xp + modulo.xp;
-    }
+export function getTrailEarnedXp(
+  trilha: Trilha,
+  remoteProgressRows: RemoteModuleProgressRow[]
+): number {
 
-    return xp;
-  }, 0);
+  return Math.floor(
+    trilha.modulos.reduce((totalXp, mod) => {
+      const state = remoteProgressRows.find(
+        r => r.module_id === mod.id && r.trail_slug === trilha.slug
+      );
+
+      if (state?.completed) {
+        const taxaAcerto =
+          (state.quiz_score || 0) / (state.quiz_total || 1);
+
+        return totalXp + (mod.xp * taxaAcerto);
+      }
+
+      return totalXp;
+    }, 0)
+  );
 }
 
 export function getForumComments(
