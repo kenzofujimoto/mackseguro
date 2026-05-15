@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { Link, MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import ModuloConteudo from "./ModuloConteudo.tsx";
 
@@ -91,6 +91,35 @@ describe("ModuloConteudo", () => {
     renderModulo();
 
     expect(screen.getByText(/entre com sua conta para comentar/i)).toBeInTheDocument();
+  });
+
+  it("renderiza módulo inexistente sem violar a ordem dos hooks", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const user = userEvent.setup();
+
+    try {
+      render(
+        <MemoryRouter initialEntries={["/trilhas/seguranca-digital/modulo/1"]}>
+          <Link to="/trilhas/seguranca-digital/modulo/999">Abrir módulo inexistente</Link>
+          <Routes>
+            <Route path="/trilhas/:slug/modulo/:moduloId" element={<ModuloConteudo />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      expect(screen.getByTitle(/video do modulo/i)).toBeInTheDocument();
+
+      await user.click(screen.getByRole("link", { name: /abrir módulo inexistente/i }));
+
+      expect(await screen.findByText(/módulo não encontrado/i)).toBeInTheDocument();
+      expect(
+        consoleErrorSpy.mock.calls.some((call) =>
+          call.some((message) => String(message).includes("change in the order of Hooks")),
+        ),
+      ).toBe(false);
+    } finally {
+      consoleErrorSpy.mockRestore();
+    }
   });
 
   it("permite responder, curtir e denunciar comentários", async () => {

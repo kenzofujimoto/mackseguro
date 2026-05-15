@@ -17,7 +17,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { trilhas, conteudosModulos, corMap } from "../data/mock.ts";
-import type { CorKey } from "../data/mock.ts";
+import type { ConteudoModulo, CorKey, Modulo, Trilha } from "../data/mock.ts";
 import Seo from "../components/seo/Seo.tsx";
 import { useUserDataRefresh } from "../hooks/useUserDataRefresh.ts";
 import {
@@ -65,56 +65,19 @@ function sortByOldest(comments: ForumComment[]): ForumComment[] {
   });
 }
 
+type ModuloConteudoValidoProps = {
+  slugValue: string;
+  modId: number;
+  trilha: Trilha;
+  modulo: Modulo;
+  conteudo: ConteudoModulo;
+};
+
 export default function ModuloConteudo() {
   const { slug, moduloId } = useParams<{ slug: string; moduloId: string }>();
   const slugValue = slug ?? "";
   const modId = Number(moduloId);
   const trilha = trilhas.find((t) => t.slug === slugValue);
-  const { isLoaded, isSignedIn, user } = useUser();
-  const dataVersion = useUserDataRefresh();
-
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [moduleCompleted, setModuleCompleted] = useState(() => {
-    if (!slugValue || Number.isNaN(modId)) {
-      return false;
-    }
-
-    return isModuleCompleted(slugValue, modId);
-  });
-
-  const [forumComments, setForumComments] = useState<ForumComment[]>([]);
-  const [forumText, setForumText] = useState("");
-  const [forumError, setForumError] = useState("");
-  const [activeReplyId, setActiveReplyId] = useState<string | null>(null);
-  const [replyText, setReplyText] = useState("");
-  const [reportingCommentId, setReportingCommentId] = useState<string | null>(null);
-  const [reportReason, setReportReason] = useState<ReportReason>("spam");
-  const [reportedCommentId, setReportedCommentId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!slugValue || Number.isNaN(modId)) {
-      return;
-    }
-    setModuleCompleted(isModuleCompleted(slugValue, modId));
-  }, [slugValue, modId, dataVersion]);
-
-  useEffect(() => {
-    if (!slugValue || Number.isNaN(modId)) {
-      return;
-    }
-
-    setSidebarOpen(false);
-    setSelectedAnswers({});
-    setQuizSubmitted(false);
-    setForumText("");
-    setForumError("");
-    setActiveReplyId(null);
-    setReplyText("");
-    setReportingCommentId(null);
-    setReportedCommentId(null);
-  }, [modId, slugValue]);
 
   if (!trilha) {
     return (
@@ -135,51 +98,6 @@ export default function ModuloConteudo() {
 
   const modulo = trilha.modulos.find((m) => m.id === modId);
   const conteudo = conteudosModulos.find((c) => c.trilhaSlug === slugValue && c.moduloId === modId);
-  const cores = corMap[trilha.cor as CorKey];
-  const modIndex = trilha.modulos.findIndex((m) => m.id === modId);
-  const prevMod = modIndex > 0 ? trilha.modulos[modIndex - 1] : null;
-  const nextMod = modIndex < trilha.modulos.length - 1 ? trilha.modulos[modIndex + 1] : null;
-  const useRemoteForum = isLoaded && isSignedIn && canReadForumFromRemote();
-
-  const currentUserId = user?.id ?? "";
-  const currentUserName = user?.fullName
-    ?? user?.username
-    ?? user?.primaryEmailAddress?.emailAddress?.split("@")[0]
-    ?? "Aluno";
-
-  const refreshForum = useCallback(async () => {
-    if (!conteudo || !slugValue || Number.isNaN(modId)) {
-      return;
-    }
-
-    if (useRemoteForum) {
-      try {
-        const remoteComments = await fetchRemoteForumComments(slugValue, modId);
-        if (remoteComments) {
-          setForumComments(remoteComments);
-          return;
-        }
-      } catch (error) {
-        console.error("[ModuloConteudo] remote forum fetch failed", error);
-      }
-    }
-
-    setForumComments(getForumComments(slugValue, modId, []));
-  }, [conteudo, modId, slugValue, useRemoteForum]);
-
-  useEffect(() => {
-    void refreshForum();
-  }, [refreshForum]);
-
-  useEffect(() => {
-    if (useRemoteForum || !conteudo || !slugValue || Number.isNaN(modId)) {
-      return;
-    }
-
-    return subscribeToUserDataChanges(() => {
-      setForumComments(getForumComments(slugValue, modId, []));
-    });
-  }, [conteudo, modId, slugValue, useRemoteForum]);
 
   if (!modulo || !conteudo) {
     return (
@@ -198,8 +116,93 @@ export default function ModuloConteudo() {
     );
   }
 
+  return (
+    <ModuloConteudoValido
+      slugValue={slugValue}
+      modId={modId}
+      trilha={trilha}
+      modulo={modulo}
+      conteudo={conteudo}
+    />
+  );
+}
+
+function ModuloConteudoValido({ slugValue, modId, trilha, modulo, conteudo }: ModuloConteudoValidoProps) {
+  const { isLoaded, isSignedIn, user } = useUser();
+  const dataVersion = useUserDataRefresh();
+
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
+  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [moduleCompleted, setModuleCompleted] = useState(() => isModuleCompleted(slugValue, modId));
+  const [forumComments, setForumComments] = useState<ForumComment[]>([]);
+  const [forumText, setForumText] = useState("");
+  const [forumError, setForumError] = useState("");
+  const [activeReplyId, setActiveReplyId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [reportingCommentId, setReportingCommentId] = useState<string | null>(null);
+  const [reportReason, setReportReason] = useState<ReportReason>("spam");
+  const [reportedCommentId, setReportedCommentId] = useState<string | null>(null);
+  const cores = corMap[trilha.cor as CorKey];
+  const modIndex = trilha.modulos.findIndex((m) => m.id === modId);
+  const prevMod = modIndex > 0 ? trilha.modulos[modIndex - 1] : null;
+  const nextMod = modIndex < trilha.modulos.length - 1 ? trilha.modulos[modIndex + 1] : null;
+  const useRemoteForum = isLoaded && isSignedIn && canReadForumFromRemote();
+
+  const currentUserId = user?.id ?? "";
+  const currentUserName = user?.fullName
+    ?? user?.username
+    ?? user?.primaryEmailAddress?.emailAddress?.split("@")[0]
+    ?? "Aluno";
+
   useEffect(() => {
-    if (useRemoteForum || !conteudo || !isLoaded || !isSignedIn || !user?.id) {
+    setModuleCompleted(isModuleCompleted(slugValue, modId));
+  }, [slugValue, modId, dataVersion]);
+
+  useEffect(() => {
+    setSidebarOpen(false);
+    setSelectedAnswers({});
+    setQuizSubmitted(false);
+    setForumText("");
+    setForumError("");
+    setActiveReplyId(null);
+    setReplyText("");
+    setReportingCommentId(null);
+    setReportedCommentId(null);
+  }, [modId, slugValue]);
+
+  const refreshForum = useCallback(async () => {
+    if (useRemoteForum) {
+      try {
+        const remoteComments = await fetchRemoteForumComments(slugValue, modId);
+        if (remoteComments) {
+          setForumComments(remoteComments);
+          return;
+        }
+      } catch (error) {
+        console.error("[ModuloConteudo] remote forum fetch failed", error);
+      }
+    }
+
+    setForumComments(getForumComments(slugValue, modId, []));
+  }, [modId, slugValue, useRemoteForum]);
+
+  useEffect(() => {
+    void refreshForum();
+  }, [refreshForum]);
+
+  useEffect(() => {
+    if (useRemoteForum) {
+      return;
+    }
+
+    return subscribeToUserDataChanges(() => {
+      setForumComments(getForumComments(slugValue, modId, []));
+    });
+  }, [modId, slugValue, useRemoteForum]);
+
+  useEffect(() => {
+    if (useRemoteForum || !isLoaded || !isSignedIn || !user?.id) {
       return;
     }
 
@@ -207,7 +210,7 @@ export default function ModuloConteudo() {
     if (migratedCount > 0) {
       setForumComments(getForumComments(slugValue, modId, []));
     }
-  }, [conteudo, currentUserName, isLoaded, isSignedIn, modId, slugValue, useRemoteForum, user?.id]);
+  }, [currentUserName, isLoaded, isSignedIn, modId, slugValue, useRemoteForum, user?.id]);
 
   const topLevelComments = useMemo(() => {
     return sortByRecent(forumComments.filter((comment) => comment.parentId === null));
