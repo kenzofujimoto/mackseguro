@@ -76,6 +76,71 @@ describe("migrateAnonymousPosts", () => {
   });
 });
 
+describe("getForumComments", () => {
+  it("seeds and persists forum comments when no stored comments exist", () => {
+    const seedPosts = [
+      {
+        id: 1,
+        autor: "Maria Santos",
+        iniciais: "MS",
+        data: "2026-03-08",
+        conteudo: "Comentario inicial do mock.",
+        respostas: 3,
+      },
+    ];
+
+    const comments = getForumComments("seguranca-digital", 1, seedPosts);
+
+    expect(comments).toHaveLength(1);
+    expect(comments[0]).toMatchObject({
+      id: "seed-seguranca-digital-1-1",
+      parentId: null,
+      authorId: "seed-seguranca-digital-1-1",
+      authorName: "Maria Santos",
+      authorInitials: "MS",
+      createdAt: "2026-03-08",
+      content: "Comentario inicial do mock.",
+      likeUserIds: [],
+      reports: [],
+      legacyReplyCount: 3,
+    });
+
+    const persisted = getForumComments("seguranca-digital", 1);
+    expect(persisted).toEqual(comments);
+  });
+
+  it("does not replace existing stored comments with seed posts", () => {
+    const storedComment = createComment({
+      id: "comment-local",
+      content: "Comentario criado pelo aluno.",
+    });
+
+    localStorage.setItem(
+      "mackseguro:user-data",
+      JSON.stringify({
+        moduleProgress: {},
+        forumPosts: {},
+        forumComments: {
+          "seguranca-digital:1": [storedComment],
+        },
+      }),
+    );
+
+    const comments = getForumComments("seguranca-digital", 1, [
+      {
+        id: 1,
+        autor: "Maria Santos",
+        iniciais: "MS",
+        data: "2026-03-08",
+        conteudo: "Comentario inicial do mock.",
+        respostas: 3,
+      },
+    ]);
+
+    expect(comments).toEqual([storedComment]);
+  });
+});
+
 describe("isForumCommentHidden", () => {
   it("returns true when comment reaches moderation report threshold", () => {
     const hiddenComment = createComment({

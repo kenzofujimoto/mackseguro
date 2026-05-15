@@ -335,10 +335,11 @@ export function getForumComments(
     return storedComments;
   }
 
+  const seedIdPrefix = `seed-${slug}-${moduloId}`;
   const seededComments: ForumComment[] = seedPosts.map((post) => ({
-    id: `seed-${post.id}`,
+    id: `${seedIdPrefix}-${post.id}`,
     parentId: null,
-    authorId: `seed-${post.id}`,
+    authorId: `${seedIdPrefix}-${post.id}`,
     authorName: post.autor,
     authorInitials: post.iniciais,
     createdAt: post.data,

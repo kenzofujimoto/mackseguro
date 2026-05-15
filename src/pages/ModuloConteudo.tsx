@@ -155,7 +155,7 @@ export default function ModuloConteudo() {
     if (useRemoteForum) {
       try {
         const remoteComments = await fetchRemoteForumComments(slugValue, modId);
-        if (remoteComments) {
+        if (remoteComments && remoteComments.length > 0) {
           setForumComments(remoteComments);
           return;
         }
@@ -164,7 +164,7 @@ export default function ModuloConteudo() {
       }
     }
 
-    setForumComments(getForumComments(slugValue, modId, []));
+    setForumComments(getForumComments(slugValue, modId, conteudo.forum));
   }, [conteudo, modId, slugValue, useRemoteForum]);
 
   useEffect(() => {
@@ -177,7 +177,7 @@ export default function ModuloConteudo() {
     }
 
     return subscribeToUserDataChanges(() => {
-      setForumComments(getForumComments(slugValue, modId, []));
+      setForumComments(getForumComments(slugValue, modId, conteudo.forum));
     });
   }, [conteudo, modId, slugValue, useRemoteForum]);
 
@@ -205,7 +205,7 @@ export default function ModuloConteudo() {
 
     const migratedCount = migrateAnonymousPosts(user.id, currentUserName);
     if (migratedCount > 0) {
-      setForumComments(getForumComments(slugValue, modId, []));
+      setForumComments(getForumComments(slugValue, modId, conteudo.forum));
     }
   }, [conteudo, currentUserName, isLoaded, isSignedIn, modId, slugValue, useRemoteForum, user?.id]);
 

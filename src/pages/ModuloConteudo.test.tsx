@@ -28,9 +28,22 @@ const clerkState = vi.hoisted<{
   },
 }));
 
+const forumRemoteState = vi.hoisted(() => ({
+  canRead: false,
+  comments: null as unknown[] | null,
+}));
+
 vi.mock("@clerk/react", () => ({
   useUser: () => clerkState,
   SignInButton: ({ children }: { children: unknown }) => <>{children}</>,
+}));
+
+vi.mock("../lib/forumRemote.ts", () => ({
+  addRemoteForumComment: vi.fn(),
+  canReadForumFromRemote: () => forumRemoteState.canRead,
+  fetchRemoteForumComments: vi.fn(async () => forumRemoteState.comments),
+  reportRemoteForumComment: vi.fn(),
+  toggleRemoteForumLike: vi.fn(),
 }));
 
 function setAuthSignedIn() {
@@ -65,12 +78,31 @@ function renderModulo() {
 describe("ModuloConteudo", () => {
   beforeEach(() => {
     setAuthSignedIn();
+    forumRemoteState.canRead = false;
+    forumRemoteState.comments = null;
   });
 
   it("exibe player de video funcional no modulo", () => {
     renderModulo();
 
     expect(screen.getByTitle(/video do modulo/i)).toBeInTheDocument();
+  });
+
+  it("exibe comentarios mockados do forum quando nao ha dados locais", async () => {
+    renderModulo();
+
+    expect(await screen.findByText(/maria santos/i)).toBeInTheDocument();
+    expect(screen.getByText(/nunca explicaram isso de forma tão clara/i)).toBeInTheDocument();
+  });
+
+  it("usa comentarios mockados quando o forum remoto esta vazio", async () => {
+    forumRemoteState.canRead = true;
+    forumRemoteState.comments = [];
+
+    renderModulo();
+
+    expect(await screen.findByText(/maria santos/i)).toBeInTheDocument();
+    expect(screen.getByText(/nunca explicaram isso de forma tão clara/i)).toBeInTheDocument();
   });
 
   it("publica uma nova mensagem no forum", async () => {
