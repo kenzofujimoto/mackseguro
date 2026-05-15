@@ -6,7 +6,6 @@ import {
   migrateAnonymousPosts,
   type ForumComment,
 } from "./userData.ts";
-import { fetchUserGamification } from "./gamification/badges.ts";
 
 function createComment(overrides: Partial<ForumComment>): ForumComment {
   return {
