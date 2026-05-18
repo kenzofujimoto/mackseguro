@@ -2,10 +2,11 @@ import React from "react";
 import { Routes, Route, Link } from "react-router-dom";
 import { useAuth } from "@clerk/react";
 import { setSupabaseTokenGetter } from "./lib/supabaseConfig.ts";
+import { syncRemoteProgressToLocal } from "./lib/userData.ts";
+
 import Navbar from "./components/layout/Navbar.tsx";
 import Footer from "./components/layout/Footer.tsx";
 
-/* ===== Páginas (placeholders) ===== */
 import Home from "./pages/Home.tsx";
 import Trilhas from "./pages/Trilhas.tsx";
 import TrilhaDetalhe from "./pages/TrilhaDetalhe.tsx";
@@ -16,8 +17,19 @@ import Sobre from "./pages/Sobre.tsx";
 import ModuloConteudo from "./pages/ModuloConteudo.tsx";
 import AuthSignIn from "./pages/AuthSignIn.tsx";
 import AuthSignUp from "./pages/AuthSignUp.tsx";
-import CourseAccessGate from "./components/auth/CourseAccessGate.tsx";
 import Perfil from "./pages/Perfil.tsx";
+
+import CourseAccessGate from "./components/auth/CourseAccessGate.tsx";
+import ProtectedAdminRoute from "./components/auth/ProtectedAdminRoute.tsx";
+
+import { AdminTrailsPage } from "./pages/admin/AdminTrailsPage.tsx";
+import { CreateTrailPage } from "./pages/admin/CreateTrailPage.tsx";
+import { EditTrailPage } from "./pages/admin/EditTrailPage.tsx";
+import { TrailModulesPage } from "./pages/admin/TrailModulesPage.tsx";
+import { EditModulePage } from "./pages/admin/EditModulePage.tsx";
+
+import ModuleContentPage from "./pages/admin/ModuleContentPage.tsx";
+import ModuleQuizPage from "./pages/admin/ModuleQuizPage.tsx";
 
 function NotFoundPage() {
   return (
@@ -29,7 +41,10 @@ function NotFoundPage() {
         O endereço informado não existe no MackSeguro.
       </p>
       <div className="mt-6">
-        <Link to="/" className="font-semibold text-[var(--color-mack)] hover:underline">
+        <Link
+          to="/"
+          className="font-semibold text-[var(--color-mack)] hover:underline"
+        >
           Voltar para Home
         </Link>
       </div>
@@ -37,7 +52,6 @@ function NotFoundPage() {
   );
 }
 
-/** Layout for app pages (trilhas, materiais, etc.) — includes Navbar + Footer */
 function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
@@ -48,12 +62,12 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-import { syncRemoteProgressToLocal } from "./lib/userData.ts";
-
 function ClerkSupabaseIntegration() {
   const { getToken, userId } = useAuth();
+
   React.useEffect(() => {
     setSupabaseTokenGetter(() => getToken({ template: "supabase" }));
+
     return () => {
       setSupabaseTokenGetter(null);
     };
@@ -72,23 +86,99 @@ function App() {
   return (
     <>
       <ClerkSupabaseIntegration />
+
       <Routes>
         <Route path="/auth/sign-in/*" element={<AuthSignIn />} />
         <Route path="/auth/sign-up/*" element={<AuthSignUp />} />
 
-        {/* App pages — shared Navbar + Footer */}
         <Route path="/" element={<AppLayout><Home /></AppLayout>} />
         <Route path="/trilhas" element={<AppLayout><Trilhas /></AppLayout>} />
         <Route path="/trilhas/:slug" element={<AppLayout><TrilhaDetalhe /></AppLayout>} />
         <Route
           path="/trilhas/:slug/modulo/:moduloId"
-          element={<AppLayout><CourseAccessGate><ModuloConteudo /></CourseAccessGate></AppLayout>}
+          element={
+            <AppLayout>
+              <CourseAccessGate>
+                <ModuloConteudo />
+              </CourseAccessGate>
+            </AppLayout>
+          }
         />
+
         <Route path="/materiais" element={<AppLayout><Materiais /></AppLayout>} />
         <Route path="/pilulas" element={<AppLayout><Pilulas /></AppLayout>} />
         <Route path="/eventos" element={<AppLayout><Eventos /></AppLayout>} />
         <Route path="/sobre" element={<AppLayout><Sobre /></AppLayout>} />
-        <Route path="/perfil" element={<AppLayout><CourseAccessGate><Perfil /></CourseAccessGate></AppLayout>} />
+        <Route
+          path="/perfil"
+          element={
+            <AppLayout>
+              <CourseAccessGate>
+                <Perfil />
+              </CourseAccessGate>
+            </AppLayout>
+          }
+        />
+
+        <Route
+          path="/admin/trilhas"
+          element={
+            <ProtectedAdminRoute>
+              <AdminTrailsPage />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/trilhas/nova"
+          element={
+            <ProtectedAdminRoute>
+              <CreateTrailPage />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/trilhas/:id/editar"
+          element={
+            <ProtectedAdminRoute>
+              <EditTrailPage />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/trilhas/:id/modulos"
+          element={
+            <ProtectedAdminRoute>
+              <TrailModulesPage />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/modulos/:id/editar"
+          element={
+            <ProtectedAdminRoute>
+              <EditModulePage />
+            </ProtectedAdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/modulos/:id/conteudo"
+          element={
+            <ProtectedAdminRoute>
+              <ModuleContentPage />
+            </ProtectedAdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/modulos/:id/quiz"
+          element={
+            <ProtectedAdminRoute>
+              <ModuleQuizPage />
+            </ProtectedAdminRoute>
+          }
+        />
+
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>

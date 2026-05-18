@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ShieldCheck, Heart, ArrowRight } from "lucide-react";
-import { trilhas, corMap } from "../data/mock.ts";
+import { corMap } from "../data/mock.ts";
+import { loadTrails } from "../lib/trailsRemote.ts";
 import type { CorKey } from "../data/mock.ts";
 import Seo from "../components/seo/Seo.tsx";
 import { useUserDataRefresh } from "../hooks/useUserDataRefresh.ts";
@@ -10,6 +11,15 @@ import { getTrailEarnedXp, getTrailProgress } from "../lib/userData.ts";
 export default function Trilhas() {
   const dataVersion = useUserDataRefresh();
 
+  const [trilhas, setTrilhas] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadTrails()
+      .then(setTrilhas)
+      .finally(() => setLoading(false));
+  }, []);
+
   const trilhasComProgresso = useMemo(
     () =>
       trilhas.map((trilha) => ({
@@ -17,8 +27,28 @@ export default function Trilhas() {
         progresso: getTrailProgress(trilha.slug, trilha.modulos.length),
         xpConquistado: getTrailEarnedXp(trilha),
       })),
-    [dataVersion],
+    [trilhas, dataVersion],
   );
+
+  if (loading) {
+    return (
+      <>
+        <Seo
+          title="Trilhas de Aprendizado"
+          description="Explore trilhas interativas do MackSeguro para aprender segurança digital no seu ritmo."
+          canonicalPath="/trilhas"
+        />
+
+        <section className="bg-[var(--color-bg-surface)] px-4 py-14">
+          <div className="mx-auto max-w-7xl">
+            <h1 className="text-2xl font-bold text-[var(--color-text)] sm:text-3xl">
+              Carregando trilhas...
+            </h1>
+          </div>
+        </section>
+      </>
+    );
+  }
 
   return (
     <>
@@ -40,7 +70,8 @@ export default function Trilhas() {
           <div className="mt-8 grid gap-5 md:grid-cols-2">
             {trilhasComProgresso.map(({ trilha, progresso, xpConquistado }) => {
               const Icon = trilha.icone === "ShieldCheck" ? ShieldCheck : Heart;
-              const cores = corMap[trilha.cor as CorKey];
+              const cores = corMap[trilha.cor as CorKey] ?? <corMap className="red"></corMap>;
+
               return (
                 <Link
                   key={trilha.id}
@@ -72,6 +103,7 @@ export default function Trilhas() {
                       style={{ width: `${progresso.percentage}%` }}
                     />
                   </div>
+
                   <p className="mb-3 text-xs text-[var(--color-text-muted)]">
                     Progresso: {progresso.percentage}%
                   </p>
@@ -80,6 +112,7 @@ export default function Trilhas() {
                     <span className="text-[var(--color-text-muted)]">
                       {progresso.completedModules}/{trilha.modulos.length} módulos concluídos
                     </span>
+
                     <span className="flex items-center gap-1 font-medium text-[var(--color-mack)]">
                       Acessar trilha
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

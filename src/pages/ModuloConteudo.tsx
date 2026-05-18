@@ -16,7 +16,9 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import { trilhas, conteudosModulos, corMap } from "../data/mock.ts";
+import { corMap } from "../data/mock.ts";
+import { loadTrails } from "../lib/trailsRemote.ts";
+import { loadModuleContent } from "../lib/moduleContentRemote.ts";
 import type { CorKey } from "../data/mock.ts";
 import Seo from "../components/seo/Seo.tsx";
 import { useUserDataRefresh } from "../hooks/useUserDataRefresh.ts";
@@ -68,7 +70,10 @@ function sortByOldest(comments: ForumComment[]): ForumComment[] {
 export default function ModuloConteudo() {
   const { slug, moduloId } = useParams<{ slug: string; moduloId: string }>();
   const slugValue = slug ?? "";
-  const modId = Number(moduloId);
+  const modId = moduloId ?? "";
+  const [trilhas, setTrilhas] = useState<any[]>([]);
+  const [conteudo, setConteudo] = useState<any | null>(null);
+
   const trilha = trilhas.find((t) => t.slug === slugValue);
   const { isLoaded, isSignedIn, user } = useUser();
   const dataVersion = useUserDataRefresh();
@@ -77,7 +82,7 @@ export default function ModuloConteudo() {
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [moduleCompleted, setModuleCompleted] = useState(() => {
-    if (!slugValue || Number.isNaN(modId)) {
+    if (!slugValue || !modId) {
       return false;
     }
 
@@ -94,17 +99,48 @@ export default function ModuloConteudo() {
   const [reportedCommentId, setReportedCommentId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!slugValue || Number.isNaN(modId)) {
+    if (!slugValue || !modId) {
       return;
     }
     setModuleCompleted(isModuleCompleted(slugValue, modId));
   }, [slugValue, modId, dataVersion]);
 
   useEffect(() => {
-    if (!slugValue || Number.isNaN(modId)) {
-      return;
+    async function carregarDados() {
+      const trailsData = await loadTrails();
+      setTrilhas(trailsData);
+
+      if (modId) {
+        const contentData = await loadModuleContent(modId);
+
+        if (contentData) {
+          const normalizedContent = contentData as any;
+
+          setConteudo({
+            ...normalizedContent,
+            conteudo:
+              normalizedContent.conteudo ??
+              (normalizedContent.texto
+                ? String(normalizedContent.texto)
+                    .split("\n")
+                    .filter((paragrafo: string) => paragrafo.trim().length > 0)
+                : []),
+            questoes: normalizedContent.questoes ?? [],
+            videoTitulo: normalizedContent.videoTitulo ?? "Vídeo do módulo",
+            videoDuracao: normalizedContent.videoDuracao ?? "",
+          });
+        } else {
+          setConteudo(null);
+        }
+      } else {
+        setConteudo(null);
+      }
     }
 
+    carregarDados();
+  }, [modId]);
+
+  useEffect(() => {
     setSidebarOpen(false);
     setSelectedAnswers({});
     setQuizSubmitted(false);
@@ -116,29 +152,11 @@ export default function ModuloConteudo() {
     setReportedCommentId(null);
   }, [modId, slugValue]);
 
-  if (!trilha) {
-    return (
-      <>
-        <Seo
-          title="Trilha não encontrada"
-          description="A trilha informada não foi encontrada no MackSeguro."
-          canonicalPath="/trilhas"
-        />
-
-        <section className="bg-white px-4 py-20 text-center">
-          <h1 className="mb-4 text-2xl font-bold text-[var(--color-text)]">Trilha não encontrada</h1>
-          <Link to="/trilhas" className="font-medium text-[var(--color-mack)] hover:underline cursor-pointer">← Voltar para trilhas</Link>
-        </section>
-      </>
-    );
-  }
-
-  const modulo = trilha.modulos.find((m) => m.id === modId);
-  const conteudo = conteudosModulos.find((c) => c.trilhaSlug === slugValue && c.moduloId === modId);
-  const cores = corMap[trilha.cor as CorKey];
-  const modIndex = trilha.modulos.findIndex((m) => m.id === modId);
-  const prevMod = modIndex > 0 ? trilha.modulos[modIndex - 1] : null;
-  const nextMod = modIndex < trilha.modulos.length - 1 ? trilha.modulos[modIndex + 1] : null;
+  const modulo = trilha?.modulos?.find((m: any) => m.id === modId);
+  const cores = trilha ? (corMap[trilha.cor as CorKey] ?? corMap.red) : corMap.red;
+  const modIndex = trilha?.modulos?.findIndex((m: any) => m.id === modId) ?? -1;
+  const prevMod = trilha && modIndex > 0 ? trilha.modulos[modIndex - 1] : null;
+  const nextMod = trilha && modIndex >= 0 && modIndex < trilha.modulos.length - 1 ? trilha.modulos[modIndex + 1] : null;
   const useRemoteForum = isLoaded && isSignedIn && canReadForumFromRemote();
 
   const currentUserId = user?.id ?? "";
@@ -148,7 +166,7 @@ export default function ModuloConteudo() {
     ?? "Aluno";
 
   const refreshForum = useCallback(async () => {
-    if (!conteudo || !slugValue || Number.isNaN(modId)) {
+    if (!conteudo || !slugValue || !modId) {
       return;
     }
 
@@ -172,7 +190,7 @@ export default function ModuloConteudo() {
   }, [refreshForum]);
 
   useEffect(() => {
-    if (useRemoteForum || !conteudo || !slugValue || Number.isNaN(modId)) {
+    if (useRemoteForum || !conteudo || !slugValue || !modId) {
       return;
     }
 
@@ -180,23 +198,6 @@ export default function ModuloConteudo() {
       setForumComments(getForumComments(slugValue, modId, []));
     });
   }, [conteudo, modId, slugValue, useRemoteForum]);
-
-  if (!modulo || !conteudo) {
-    return (
-      <>
-        <Seo
-          title="Módulo não encontrado"
-          description="O módulo solicitado não foi encontrado no MackSeguro."
-          canonicalPath={`/trilhas/${trilha.slug}`}
-        />
-
-        <section className="bg-white px-4 py-20 text-center">
-          <h1 className="mb-4 text-2xl font-bold text-[var(--color-text)]">Módulo não encontrado</h1>
-          <Link to={`/trilhas/${trilha.slug}`} className="font-medium text-[var(--color-mack)] hover:underline cursor-pointer">← Voltar para a trilha</Link>
-        </section>
-      </>
-    );
-  }
 
   useEffect(() => {
     if (useRemoteForum || !conteudo || !isLoaded || !isSignedIn || !user?.id) {
@@ -232,17 +233,23 @@ export default function ModuloConteudo() {
     return map;
   }, [forumComments]);
 
-  const quizScore = conteudo.questoes.reduce((acc, q) => {
+  const questoes = conteudo?.questoes ?? [];
+
+  const quizScore = questoes.reduce((acc: number, q: any) => {
     return acc + (selectedAnswers[q.id] === q.respostaCorreta ? 1 : 0);
   }, 0);
 
   const handleSubmitQuiz = () => {
+    if (!conteudo) {
+      return;
+    }
+
     setQuizSubmitted(true);
     markModuleCompleted(
       slugValue,
       modId,
       quizScore,
-      conteudo.questoes.length,
+      questoes.length,
       currentUserId,
     );
     setModuleCompleted(true);
@@ -418,6 +425,40 @@ export default function ModuloConteudo() {
       setForumError("Não foi possível enviar sua denúncia agora. Tente novamente.");
     }
   };
+
+  if (!trilha) {
+    return (
+      <>
+        <Seo
+          title="Trilha não encontrada"
+          description="A trilha informada não foi encontrada no MackSeguro."
+          canonicalPath="/trilhas"
+        />
+
+        <section className="bg-white px-4 py-20 text-center">
+          <h1 className="mb-4 text-2xl font-bold text-[var(--color-text)]">Trilha não encontrada</h1>
+          <Link to="/trilhas" className="font-medium text-[var(--color-mack)] hover:underline cursor-pointer">← Voltar para trilhas</Link>
+        </section>
+      </>
+    );
+  }
+
+  if (!modulo || !conteudo) {
+    return (
+      <>
+        <Seo
+          title="Módulo não encontrado"
+          description="O módulo solicitado não foi encontrado no MackSeguro."
+          canonicalPath={`/trilhas/${trilha.slug}`}
+        />
+
+        <section className="bg-white px-4 py-20 text-center">
+          <h1 className="mb-4 text-2xl font-bold text-[var(--color-text)]">Módulo não encontrado</h1>
+          <Link to={`/trilhas/${trilha.slug}`} className="font-medium text-[var(--color-mack)] hover:underline cursor-pointer">← Voltar para a trilha</Link>
+        </section>
+      </>
+    );
+  }
 
   return (
     <>
