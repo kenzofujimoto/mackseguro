@@ -1,11 +1,11 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import { ClerkProvider } from "@clerk/react";
 import App from "./App.tsx";
 import AppErrorBoundary from "./components/system/AppErrorBoundary.tsx";
 import { getClerkPublishableKey } from "./lib/clerkConfig.ts";
 import "./index.css";
+import { ClerkProvider } from "@clerk/react";
 
 const clerkPublishableKey = getClerkPublishableKey();
 
