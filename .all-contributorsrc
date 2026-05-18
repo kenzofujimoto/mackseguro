@@ -1,4 +1,4 @@
-{
+﻿{
   "projectName": "mackseguro",
   "projectOwner": "kenzofujimoto",
   "repoType": "github",
@@ -7,28 +7,20 @@
     "README.md"
   ],
   "imageSize": 100,
-  "commit": true,
-  "commitConvention": "angular",
+  "commit": false,
+  "contributorsPerLine": 7,
   "contributors": [
     {
       "login": "kenzofujimoto",
-      "name": "Kenzo Ferreira Fujimoto",
+      "name": "Kenzo Fujimoto",
       "avatar_url": "https://avatars.githubusercontent.com/u/155571101?v=4",
       "profile": "https://github.com/kenzofujimoto",
       "contributions": [
-        "code"
-      ]
-    },
-    {
-      "login": "enzolc-fci",
-      "name": "enzolc-fci",
-      "avatar_url": "https://avatars.githubusercontent.com/u/261522478?v=4",
-      "profile": "https://github.com/enzolc-fci",
-      "contributions": [
-        "code"
+        "code",
+        "doc",
+        "maintenance",
+        "review"
       ]
     }
-  ],
-  "contributorsPerLine": 7,
-  "linkToUsage": false
+  ]
 }
