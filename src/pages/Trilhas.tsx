@@ -70,7 +70,7 @@ export default function Trilhas() {
           <div className="mt-8 grid gap-5 md:grid-cols-2">
             {trilhasComProgresso.map(({ trilha, progresso, xpConquistado }) => {
               const Icon = trilha.icone === "ShieldCheck" ? ShieldCheck : Heart;
-              const cores = corMap[trilha.cor as CorKey] ?? <corMap className="red"></corMap>;
+              const cores = corMap[trilha.cor as CorKey] ?? corMap.red;
 
               return (
                 <Link

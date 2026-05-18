@@ -30,7 +30,7 @@ export default function TrilhaDetalhe() {
   const [trilha, setTrilha] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const dataVersion = useUserDataRefresh();
+  useUserDataRefresh();
 
   useEffect(() => {
     async function carregar() {

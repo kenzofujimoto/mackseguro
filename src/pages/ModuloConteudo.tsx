@@ -71,6 +71,7 @@ export default function ModuloConteudo() {
   const { slug, moduloId } = useParams<{ slug: string; moduloId: string }>();
   const slugValue = slug ?? "";
   const modId = moduloId ?? "";
+  const modIdCompat = modId as unknown as number;
   const [trilhas, setTrilhas] = useState<any[]>([]);
   const [conteudo, setConteudo] = useState<any | null>(null);
 
@@ -86,7 +87,7 @@ export default function ModuloConteudo() {
       return false;
     }
 
-    return isModuleCompleted(slugValue, modId);
+    return isModuleCompleted(slugValue, modId as any);
   });
 
   const [forumComments, setForumComments] = useState<ForumComment[]>([]);
@@ -102,7 +103,7 @@ export default function ModuloConteudo() {
     if (!slugValue || !modId) {
       return;
     }
-    setModuleCompleted(isModuleCompleted(slugValue, modId));
+    setModuleCompleted(isModuleCompleted(slugValue, modId as any));
   }, [slugValue, modId, dataVersion]);
 
   useEffect(() => {
@@ -172,7 +173,7 @@ export default function ModuloConteudo() {
 
     if (useRemoteForum) {
       try {
-        const remoteComments = await fetchRemoteForumComments(slugValue, modId);
+        const remoteComments = await fetchRemoteForumComments(slugValue, modIdCompat)
         if (remoteComments) {
           setForumComments(remoteComments);
           return;
@@ -182,7 +183,7 @@ export default function ModuloConteudo() {
       }
     }
 
-    setForumComments(getForumComments(slugValue, modId, []));
+    getForumComments(slugValue, modIdCompat, [])
   }, [conteudo, modId, slugValue, useRemoteForum]);
 
   useEffect(() => {
@@ -195,7 +196,7 @@ export default function ModuloConteudo() {
     }
 
     return subscribeToUserDataChanges(() => {
-      setForumComments(getForumComments(slugValue, modId, []));
+      setForumComments(getForumComments(slugValue, modIdCompat, []))
     });
   }, [conteudo, modId, slugValue, useRemoteForum]);
 
@@ -206,7 +207,7 @@ export default function ModuloConteudo() {
 
     const migratedCount = migrateAnonymousPosts(user.id, currentUserName);
     if (migratedCount > 0) {
-      setForumComments(getForumComments(slugValue, modId, []));
+      setForumComments(getForumComments(slugValue, modIdCompat, []));
     }
   }, [conteudo, currentUserName, isLoaded, isSignedIn, modId, slugValue, useRemoteForum, user?.id]);
 
@@ -247,7 +248,7 @@ export default function ModuloConteudo() {
     setQuizSubmitted(true);
     markModuleCompleted(
       slugValue,
-      modId,
+      modIdCompat,
       quizScore,
       questoes.length,
       currentUserId,
@@ -276,7 +277,7 @@ export default function ModuloConteudo() {
       if (useRemoteForum) {
         await addRemoteForumComment({
           slug: slugValue,
-          moduloId: modId,
+          moduloId: modIdCompat,
           userId: currentUserId,
           authorName: currentUserName,
           content,
@@ -285,7 +286,7 @@ export default function ModuloConteudo() {
       } else {
         addForumComment({
           slug: slugValue,
-          moduloId: modId,
+          moduloId: modIdCompat,
           userId: currentUserId,
           authorName: currentUserName,
           content,
@@ -323,7 +324,7 @@ export default function ModuloConteudo() {
       if (useRemoteForum) {
         await addRemoteForumComment({
           slug: slugValue,
-          moduloId: modId,
+          moduloId: modIdCompat,
           userId: currentUserId,
           authorName: currentUserName,
           content,
@@ -332,7 +333,7 @@ export default function ModuloConteudo() {
       } else {
         addForumComment({
           slug: slugValue,
-          moduloId: modId,
+          moduloId: modIdCompat,
           userId: currentUserId,
           authorName: currentUserName,
           content,
@@ -375,7 +376,7 @@ export default function ModuloConteudo() {
           liked,
         });
       } else {
-        toggleForumCommentLike(slugValue, modId, commentId, currentUserId);
+        toggleForumCommentLike(slugValue, modIdCompat, commentId, currentUserId);
       }
 
       await refreshForum();
@@ -409,7 +410,7 @@ export default function ModuloConteudo() {
           return;
         }
       } else {
-        const success = reportForumComment(slugValue, modId, commentId, currentUserId, reportReason);
+        const success = reportForumComment(slugValue, modIdCompat, commentId, currentUserId, reportReason);
         if (!success) {
           setForumError("Você já denunciou este comentário.");
           return;
@@ -493,7 +494,7 @@ export default function ModuloConteudo() {
             <nav className="sticky top-20">
               <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Módulos</h3>
               <ol className="space-y-1">
-                {trilha.modulos.map((m, i) => (
+                {trilha.modulos.map((m: any, i: number) => (
                   <li key={m.id}>
                     <Link
                       to={`/trilhas/${trilha.slug}/modulo/${m.id}`}
@@ -525,7 +526,7 @@ export default function ModuloConteudo() {
                   </button>
                 </div>
                 <ol className="space-y-1">
-                  {trilha.modulos.map((m, i) => (
+                  {trilha.modulos.map((m: any, i: number) => (
                     <li key={m.id}>
                       <Link
                         to={`/trilhas/${trilha.slug}/modulo/${m.id}`}
@@ -575,7 +576,7 @@ export default function ModuloConteudo() {
             <div className="card-mk mb-8 p-6 sm:p-8">
               <h2 className="mb-5 text-lg font-bold text-[var(--color-text)]">Conteúdo</h2>
               <div className="space-y-4">
-                {conteudo.conteudo.map((paragrafo, i) => (
+                {conteudo.conteudo.map((paragrafo: any, i: number) => (
                   <p key={i} className="text-sm leading-relaxed text-[var(--color-text-secondary)]">{paragrafo}</p>
                 ))}
               </div>
@@ -623,14 +624,14 @@ export default function ModuloConteudo() {
               </div>
 
               <div className="space-y-6">
-                {conteudo.questoes.map((q, qi) => (
+                {conteudo.questoes.map((q: any, qi: number) => (
                   <div key={q.id} className="rounded-xl border border-[var(--color-border)] p-5">
                     <p className="mb-3 font-medium text-[var(--color-text)]">
                       <span className="mr-2 text-[var(--color-text-muted)]">{qi + 1}.</span>
                       {q.pergunta}
                     </p>
                     <div className="space-y-2">
-                      {q.opcoes.map((opcao, oi) => {
+                      {q.opcoes.map((opcao: any, oi: number) => {
                         const selected = selectedAnswers[q.id] === oi;
                         const isCorrect = oi === q.respostaCorreta;
                         let optionStyle = quizSubmitted

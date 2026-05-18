@@ -20,7 +20,7 @@ type RemoteQuizQuestion = {
 };
 
 function getMockContent(moduleId: string) {
-  return conteudosModulos.find((item) => item.moduloId === moduleId) || null;
+  return conteudosModulos.find((item) => String(item.moduloId) === moduleId) || null;
 }
 
 async function loadModuleQuestions(moduleId: string) {
