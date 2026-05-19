@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-const LOGO_URL = "/logo_FC_transparente.png";
+const LOGO_URL = "/logo-fci-192.webp";
 const LOGO_ALT = "[Faculdade de Computação e Informática - Mackenzie]";
 
 const footerLinks = [

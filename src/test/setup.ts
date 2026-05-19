@@ -2,24 +2,26 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach } from "vitest";
 
-if (!globalThis.localStorage) {
-  const store = new Map<string, string>();
-  globalThis.localStorage = {
-    getItem: (key: string) => store.get(key) ?? null,
-    setItem: (key: string, value: string) => {
-      store.set(key, value);
-    },
-    removeItem: (key: string) => {
-      store.delete(key);
-    },
-    clear: () => {
-      store.clear();
-    },
-    key: (index: number) => Array.from(store.keys())[index] ?? null,
+function createTestStorage(): Storage {
+  const data = new Map<string, string>();
+
+  return {
     get length() {
-      return store.size;
+      return data.size;
     },
+    clear: () => data.clear(),
+    getItem: (key: string) => data.get(key) ?? null,
+    key: (index: number) => Array.from(data.keys())[index] ?? null,
+    removeItem: (key: string) => data.delete(key),
+    setItem: (key: string, value: string) => data.set(key, value),
   };
+}
+
+if (typeof globalThis.localStorage?.getItem !== "function") {
+  Object.defineProperty(globalThis, "localStorage", {
+    value: createTestStorage(),
+    configurable: true,
+  });
 }
 
 afterEach(() => {
