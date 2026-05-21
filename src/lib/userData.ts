@@ -319,13 +319,15 @@ export function getTrailEarnedXp(
 
   return Math.floor(
     trilha.modulos.reduce((totalXp, mod) => {
-      const state = remoteProgressRows.find(
+      const remoteState = remoteProgressRows.find(
         r => r.module_id === mod.id && r.trail_slug === trilha.slug
       );
+      const localState = remoteState ? null : getModuleProgress(trilha.slug, mod.id);
 
-      if (state?.completed) {
+      if (remoteState?.completed || localState?.completed) {
         const taxaAcerto =
-          (state.quiz_score || 0) / (state.quiz_total || 1);
+          ((remoteState?.quiz_score ?? localState?.quizScore) || 0) /
+          ((remoteState?.quiz_total ?? localState?.quizTotal) || 1);
 
         return totalXp + (mod.xp * taxaAcerto);
       }
