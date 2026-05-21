@@ -15,11 +15,26 @@ export default function Trilhas() {
   const [gamification, setGamification] = useState<UserGamification | null>(null);
 
   useEffect(() => {
-    if (isLoaded && user?.id) {
-      fetchUserGamification(user.id).then((data) => {
-        setGamification(data);
-      });
+    if (!isLoaded) {
+      return;
     }
+
+    if (!user?.id) {
+      setGamification(null);
+      return;
+    }
+
+    let ignore = false;
+
+    fetchUserGamification(user.id).then((data) => {
+      if (!ignore) {
+        setGamification(data);
+      }
+    });
+
+    return () => {
+      ignore = true;
+    };
   }, [user?.id, dataVersion, isLoaded]); 
 
   const trilhasComProgresso = useMemo(() => {

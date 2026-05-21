@@ -148,4 +148,40 @@ describe("total earned XP calculation", () => {
 
     expect(result).toBe(180);
   });
+
+  it("floors each module XP before summing", () => {
+    const trilha = {
+      slug: "seguranca-digital",
+      totalXp: 200,
+      modulos: [
+        { id: 1, xp: 100 },
+        { id: 2, xp: 100 },
+      ],
+    } as any;
+
+    const remoteProgressRows = [
+      {
+        user_id: "user_test",
+        trail_slug: "seguranca-digital",
+        module_id: 1,
+        completed: true,
+        completed_at: "2026-04-14T12:00:00.000Z",
+        quiz_score: 2,
+        quiz_total: 3,
+      },
+      {
+        user_id: "user_test",
+        trail_slug: "seguranca-digital",
+        module_id: 2,
+        completed: true,
+        completed_at: "2026-04-14T12:00:00.000Z",
+        quiz_score: 2,
+        quiz_total: 3,
+      },
+    ];
+
+    const result = getTrailEarnedXp(trilha, remoteProgressRows);
+
+    expect(result).toBe(132);
+  });
 });
