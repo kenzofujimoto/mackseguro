@@ -18,6 +18,7 @@ import AuthSignIn from "./pages/AuthSignIn.tsx";
 import AuthSignUp from "./pages/AuthSignUp.tsx";
 import CourseAccessGate from "./components/auth/CourseAccessGate.tsx";
 import Perfil from "./pages/Perfil.tsx";
+import CertificadoValidacao from "./pages/CertificadoValidacao.tsx";
 
 function NotFoundPage() {
   return (
@@ -89,6 +90,7 @@ function App() {
         <Route path="/eventos" element={<AppLayout><Eventos /></AppLayout>} />
         <Route path="/sobre" element={<AppLayout><Sobre /></AppLayout>} />
         <Route path="/perfil" element={<AppLayout><CourseAccessGate><Perfil /></CourseAccessGate></AppLayout>} />
+        <Route path="/certificados/:certificateCode" element={<AppLayout><CertificadoValidacao /></AppLayout>} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>
