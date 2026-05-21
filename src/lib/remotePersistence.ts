@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseClient, shouldSyncToSupabase, shouldReadFromSupabase } from "./supabaseConfig.ts";
 
 interface RemoteModuleProgressInput {
@@ -55,7 +56,7 @@ interface RemoteForumBackfillComment {
 
 function runRemoteWrite(
   operation: string,
-  writer: () => Promise<void>,
+  writer: (client: SupabaseClient) => Promise<void>,
 ): void {
   if (import.meta.env.MODE === "test") {
     return;
@@ -65,12 +66,14 @@ function runRemoteWrite(
     return;
   }
 
-  const client = getSupabaseClient();
-  if (!client) {
-    return;
-  }
+  void (async () => {
+    const client = await getSupabaseClient();
+    if (!client) {
+      return;
+    }
 
-  void writer().catch((error) => {
+    await writer(client);
+  })().catch((error) => {
     console.error(`[remotePersistence] ${operation} failed`, error);
   });
 }
@@ -87,7 +90,7 @@ export async function fetchRemoteModuleProgress(
     return [];
   }
 
-  const client = getSupabaseClient();
+  const client = await getSupabaseClient();
   if (!client) {
     return [];
   }
@@ -118,12 +121,7 @@ export function queueRemoteModuleProgressSync(
     return;
   }
 
-  runRemoteWrite("module_progress_upsert", async () => {
-    const client = getSupabaseClient();
-    if (!client) {
-      return;
-    }
-
+  runRemoteWrite("module_progress_upsert", async (client) => {
     const { error } = await client.from("module_progress").upsert(
       {
         user_id: normalizedUserId,
@@ -148,12 +146,7 @@ export function queueRemoteModuleProgressSync(
 export function queueRemoteForumCommentSync(
   input: RemoteForumCommentInput,
 ): void {
-  runRemoteWrite("forum_comment_insert", async () => {
-    const client = getSupabaseClient();
-    if (!client) {
-      return;
-    }
-
+  runRemoteWrite("forum_comment_insert", async (client) => {
     const { error } = await client.from("forum_comments").upsert(
       {
         id: input.id,
@@ -188,12 +181,7 @@ export function queueRemoteForumLikeSync(input: {
     return;
   }
 
-  runRemoteWrite("forum_like_sync", async () => {
-    const client = getSupabaseClient();
-    if (!client) {
-      return;
-    }
-
+  runRemoteWrite("forum_like_sync", async (client) => {
     if (input.liked) {
       const { error } = await client.from("forum_comment_likes").upsert(
         {
@@ -234,12 +222,7 @@ export function queueRemoteForumReportSync(input: {
     return;
   }
 
-  runRemoteWrite("forum_report_insert", async () => {
-    const client = getSupabaseClient();
-    if (!client) {
-      return;
-    }
-
+  runRemoteWrite("forum_report_insert", async (client) => {
     const { error } = await client.from("forum_comment_reports").upsert(
       {
         comment_id: input.commentId,
@@ -266,12 +249,7 @@ export function queueRemoteForumModuleBackfillSync(input: {
     return;
   }
 
-  runRemoteWrite("forum_module_backfill", async () => {
-    const client = getSupabaseClient();
-    if (!client) {
-      return;
-    }
-
+  runRemoteWrite("forum_module_backfill", async (client) => {
     const forumRows = input.comments.map((comment) => ({
       id: comment.id,
       trail_slug: input.slug,

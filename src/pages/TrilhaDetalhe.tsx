@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ShieldCheck, Heart, Clock, ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import { trilhas, corMap } from "../data/mock.ts";
@@ -10,11 +10,39 @@ import {
   getTrailProgress,
   isModuleCompleted,
 } from "../lib/userData.ts";
+import { useUser } from "@clerk/react";
+import { fetchUserGamification, type UserGamification } from "../lib/gamification/badges";
 
 export default function TrilhaDetalhe() {
+  const { user, isLoaded } = useUser();
   const { slug } = useParams<{ slug: string }>();
   const trilha = trilhas.find((t) => t.slug === slug);
   const dataVersion = useUserDataRefresh();
+  const [gamification, setGamification] = useState<UserGamification | null>(null);
+  
+  useEffect(() => {
+    if (!isLoaded) {
+      return;
+    }
+
+    if (!user?.id) {
+      setGamification(null);
+      return;
+    }
+
+    let ignore = false;
+
+    fetchUserGamification(user.id).then((data) => {
+      if (!ignore) {
+        setGamification(data);
+      }
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, [user?.id, dataVersion, isLoaded]); 
+  
 
   if (!trilha) {
     return (
@@ -43,7 +71,7 @@ export default function TrilhaDetalhe() {
   const Icon = trilha.icone === "ShieldCheck" ? ShieldCheck : Heart;
   const cores = corMap[trilha.cor as CorKey];
   const progresso = getTrailProgress(trilha.slug, trilha.modulos.length);
-  const xpConquistado = getTrailEarnedXp(trilha);
+  const xpConquistado = getTrailEarnedXp(trilha, (gamification as any)?.progressRows || []);
 
   const modulosConcluidos = useMemo(() => {
     return new Set(

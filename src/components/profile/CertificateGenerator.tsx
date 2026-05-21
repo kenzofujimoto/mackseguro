@@ -1,14 +1,13 @@
 import { useRef, useState } from "react";
 import type { FC } from "react";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import { Download, Loader2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { getSupabaseClient } from "../../lib/supabaseConfig";
 import { issueCertificate } from "../../lib/certificates";
 import type { CertificateRecord } from "../../lib/certificates";
 import { trilhas } from "../../data/mock";
-import logo from "../../../public/logo_FC_transparente.png";
+
+const LOGO_URL = "/logo-fci-192.webp";
 
 interface CertificateGeneratorProps {
   userId: string;
@@ -46,7 +45,7 @@ const CertificateGenerator: FC<CertificateGeneratorProps> = ({
 
     try {
       // 1. Verificação remota de segurança (evita que burlem o localstorage)
-      const supabase = getSupabaseClient();
+      const supabase = await getSupabaseClient();
       if (!supabase) throw new Error("Erro de infraestrutura: Banco de dados indisponível.");
       
       const { data, error } = await supabase
@@ -83,6 +82,11 @@ const CertificateGenerator: FC<CertificateGeneratorProps> = ({
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // 2. Geração do PDF
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+
       const element = certificateRef.current;
       // Tornar visível temporariamente para rampa de captura
       element.style.display = "block";
@@ -153,7 +157,7 @@ const CertificateGenerator: FC<CertificateGeneratorProps> = ({
             }}
           >
             <img
-              src={logo}
+              src={LOGO_URL}
               alt="MackSeguro"
               style={{
                 width: "100%",

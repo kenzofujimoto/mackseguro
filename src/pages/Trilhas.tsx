@@ -1,24 +1,51 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ShieldCheck, Heart, ArrowRight } from "lucide-react";
 import { trilhas, corMap } from "../data/mock.ts";
 import type { CorKey } from "../data/mock.ts";
 import Seo from "../components/seo/Seo.tsx";
 import { useUserDataRefresh } from "../hooks/useUserDataRefresh.ts";
+import { fetchUserGamification, type UserGamification } from "../lib/gamification/badges";
 import { getTrailEarnedXp, getTrailProgress } from "../lib/userData.ts";
+import { useUser } from "@clerk/react";
 
 export default function Trilhas() {
+  const { user, isLoaded } = useUser();
   const dataVersion = useUserDataRefresh();
+  const [gamification, setGamification] = useState<UserGamification | null>(null);
 
-  const trilhasComProgresso = useMemo(
-    () =>
-      trilhas.map((trilha) => ({
-        trilha,
-        progresso: getTrailProgress(trilha.slug, trilha.modulos.length),
-        xpConquistado: getTrailEarnedXp(trilha),
-      })),
-    [dataVersion],
-  );
+  useEffect(() => {
+    if (!isLoaded) {
+      return;
+    }
+
+    if (!user?.id) {
+      setGamification(null);
+      return;
+    }
+
+    let ignore = false;
+
+    fetchUserGamification(user.id).then((data) => {
+      if (!ignore) {
+        setGamification(data);
+      }
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, [user?.id, dataVersion, isLoaded]); 
+
+  const trilhasComProgresso = useMemo(() => {
+    const rows = (gamification as any)?.progressRows || []; 
+
+    return trilhas.map((trilha) => ({
+      trilha,
+      progresso: getTrailProgress(trilha.slug, trilha.modulos.length),
+      xpConquistado: getTrailEarnedXp(trilha, rows), 
+    }));
+  }, [gamification, dataVersion]);
 
   return (
     <>

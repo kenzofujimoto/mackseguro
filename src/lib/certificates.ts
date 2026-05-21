@@ -40,7 +40,7 @@ function mapCertificateRow(row: CertificateRow): CertificateRecord {
 export async function issueCertificate(
   input: IssueCertificateInput,
 ): Promise<CertificateRecord> {
-  const client = getSupabaseClient();
+  const client = await getSupabaseClient();
   if (!client) {
     throw new Error("Erro de infraestrutura: Banco de dados indisponível.");
   }
@@ -65,7 +65,7 @@ export async function issueCertificate(
 export async function fetchCertificateByCode(
   code: string,
 ): Promise<CertificateRecord | null> {
-  const client = getSupabaseClient();
+  const client = await getSupabaseClient();
   if (!client) {
     throw new Error("Erro de infraestrutura: Banco de dados indisponível.");
   }

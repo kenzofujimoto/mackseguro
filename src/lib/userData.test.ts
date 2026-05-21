@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getForumComments,
+  getTrailEarnedXp,
   isForumCommentHidden,
   migrateAnonymousPosts,
   type ForumComment,
@@ -76,6 +77,71 @@ describe("migrateAnonymousPosts", () => {
   });
 });
 
+describe("getForumComments", () => {
+  it("seeds and persists forum comments when no stored comments exist", () => {
+    const seedPosts = [
+      {
+        id: 1,
+        autor: "Maria Santos",
+        iniciais: "MS",
+        data: "2026-03-08",
+        conteudo: "Comentario inicial do mock.",
+        respostas: 3,
+      },
+    ];
+
+    const comments = getForumComments("seguranca-digital", 1, seedPosts);
+
+    expect(comments).toHaveLength(1);
+    expect(comments[0]).toMatchObject({
+      id: "seed-seguranca-digital-1-1",
+      parentId: null,
+      authorId: "seed-seguranca-digital-1-1",
+      authorName: "Maria Santos",
+      authorInitials: "MS",
+      createdAt: "2026-03-08",
+      content: "Comentario inicial do mock.",
+      likeUserIds: [],
+      reports: [],
+      legacyReplyCount: 3,
+    });
+
+    const persisted = getForumComments("seguranca-digital", 1);
+    expect(persisted).toEqual(comments);
+  });
+
+  it("does not replace existing stored comments with seed posts", () => {
+    const storedComment = createComment({
+      id: "comment-local",
+      content: "Comentario criado pelo aluno.",
+    });
+
+    localStorage.setItem(
+      "mackseguro:user-data",
+      JSON.stringify({
+        moduleProgress: {},
+        forumPosts: {},
+        forumComments: {
+          "seguranca-digital:1": [storedComment],
+        },
+      }),
+    );
+
+    const comments = getForumComments("seguranca-digital", 1, [
+      {
+        id: 1,
+        autor: "Maria Santos",
+        iniciais: "MS",
+        data: "2026-03-08",
+        conteudo: "Comentario inicial do mock.",
+        respostas: 3,
+      },
+    ]);
+
+    expect(comments).toEqual([storedComment]);
+  });
+});
+
 describe("isForumCommentHidden", () => {
   it("returns true when comment reaches moderation report threshold", () => {
     const hiddenComment = createComment({
@@ -98,5 +164,89 @@ describe("isForumCommentHidden", () => {
     });
 
     expect(isForumCommentHidden(visibleComment)).toBe(false);
+  });
+});
+
+describe("total earned XP calculation", () => {
+  it("calculates XP correctly", () => {
+    const trilha = {
+      slug: "seguranca-digital",
+      totalXp: 300,
+      modulos: [
+        { id: 1, xp: 100 },
+        { id: 2, xp: 100 },
+        { id: 3, xp: 100 },
+      ],
+    } as any;
+
+    const remoteProgressRows = [
+      {
+        user_id: "user_test",
+        trail_slug: "seguranca-digital",
+        module_id: 1,
+        completed: true,
+        completed_at: "2026-04-14T12:00:00.000Z",
+        quiz_score: 8,
+        quiz_total: 10,
+      },
+      {
+        user_id: "user_test",
+        trail_slug: "seguranca-digital",
+        module_id: 2,
+        completed: true,
+        completed_at: "2026-04-14T12:00:00.000Z",
+        quiz_score: 10,
+        quiz_total: 10,
+      },
+      {
+        user_id: "user_test",
+        trail_slug: "seguranca-digital",
+        module_id: 3,
+        completed: false,
+        completed_at: "null",
+        quiz_score: 0,
+        quiz_total: 10,
+      },
+    ];
+
+    const result = getTrailEarnedXp(trilha, remoteProgressRows);
+
+    expect(result).toBe(180);
+  });
+
+  it("floors each module XP before summing", () => {
+    const trilha = {
+      slug: "seguranca-digital",
+      totalXp: 200,
+      modulos: [
+        { id: 1, xp: 100 },
+        { id: 2, xp: 100 },
+      ],
+    } as any;
+
+    const remoteProgressRows = [
+      {
+        user_id: "user_test",
+        trail_slug: "seguranca-digital",
+        module_id: 1,
+        completed: true,
+        completed_at: "2026-04-14T12:00:00.000Z",
+        quiz_score: 2,
+        quiz_total: 3,
+      },
+      {
+        user_id: "user_test",
+        trail_slug: "seguranca-digital",
+        module_id: 2,
+        completed: true,
+        completed_at: "2026-04-14T12:00:00.000Z",
+        quiz_score: 2,
+        quiz_total: 3,
+      },
+    ];
+
+    const result = getTrailEarnedXp(trilha, remoteProgressRows);
+
+    expect(result).toBe(132);
   });
 });

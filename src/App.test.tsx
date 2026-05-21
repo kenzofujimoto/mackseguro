@@ -46,7 +46,7 @@ describe("App routing", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole("heading", { name: /valida/i })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /valida/i })).toBeInTheDocument();
     expect(await screen.findByText(/certificado encontrado/i)).toBeInTheDocument();
     expect(screen.getByText("Aluno Teste")).toBeInTheDocument();
     expect(fetchCertificateByCode).toHaveBeenCalledWith("CERT-1234ABCD");

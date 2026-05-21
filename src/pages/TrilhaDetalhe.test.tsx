@@ -1,7 +1,14 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import TrilhaDetalhe from "./TrilhaDetalhe.tsx";
+
+vi.mock("@clerk/react", () => ({
+  useUser: () => ({
+    isLoaded: true,
+    user: null,
+  }),
+}));
 
 function renderTrilhaDetalhe() {
   return render(
@@ -32,6 +39,7 @@ describe("TrilhaDetalhe", () => {
 
     renderTrilhaDetalhe();
 
+    expect(screen.getByText("75/500 XP")).toBeInTheDocument();
     expect(screen.getByText(/20% concluído/i)).toBeInTheDocument();
   });
 });
