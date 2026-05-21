@@ -5,6 +5,7 @@ import jsPDF from "jspdf";
 import { Download, Loader2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { getSupabaseClient } from "../../lib/supabaseConfig";
+import { issueCertificate } from "../../lib/certificates";
 import { trilhas } from "../../data/mock";
 import logo from "../../../public/logo_FC_transparente.png";
 
@@ -32,7 +33,7 @@ const CertificateGenerator: FC<CertificateGeneratorProps> = ({
   const generatePDF = async () => {
     if (!certificateRef.current) return;
     const code =
-      `CERT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+      `CERT-${crypto.randomUUID().replace(/-/g, "").slice(0, 16).toUpperCase()}`;
     setCertificateCode(code);
     await new Promise(resolve => setTimeout(resolve, 100));
     setLoading(true);
@@ -61,6 +62,15 @@ const CertificateGenerator: FC<CertificateGeneratorProps> = ({
         setLoading(false);
         return;
       }
+
+      await issueCertificate({
+        code,
+        trailSlug,
+        userName,
+        courseName,
+        completionDate,
+        totalHours,
+      });
 
       // 2. Geração do PDF
       const element = certificateRef.current;

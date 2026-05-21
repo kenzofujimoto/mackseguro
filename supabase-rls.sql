@@ -5,6 +5,8 @@
 DROP TABLE IF EXISTS forum_comment_likes CASCADE;
 DROP TABLE IF EXISTS forum_comment_reports CASCADE;
 DROP TABLE IF EXISTS forum_comments CASCADE;
+DROP TABLE IF EXISTS certificates CASCADE;
+DROP TABLE IF EXISTS trail_module_requirements CASCADE;
 DROP TABLE IF EXISTS module_progress CASCADE;
 
 -- =========== 1. CRIAÇÃO DAS TABELAS ===========
@@ -55,6 +57,38 @@ CREATE TABLE IF NOT EXISTS module_progress (
   UNIQUE(user_id, trail_slug, module_id)
 );
 
+-- 5. Cria a tabela de requisitos para emissão de certificados
+CREATE TABLE IF NOT EXISTS trail_module_requirements (
+  trail_slug text NOT NULL,
+  module_id integer NOT NULL,
+  PRIMARY KEY (trail_slug, module_id)
+);
+
+INSERT INTO trail_module_requirements (trail_slug, module_id)
+VALUES
+  ('seguranca-digital', 1),
+  ('seguranca-digital', 2),
+  ('seguranca-digital', 3),
+  ('seguranca-digital', 4),
+  ('seguranca-digital', 5),
+  ('saude-digital', 1),
+  ('saude-digital', 2),
+  ('saude-digital', 3),
+  ('saude-digital', 4)
+ON CONFLICT DO NOTHING;
+
+-- 6. Cria a tabela de certificados emitidos
+CREATE TABLE IF NOT EXISTS certificates (
+  code text PRIMARY KEY,
+  user_id text NOT NULL,
+  trail_slug text NOT NULL,
+  user_name text NOT NULL,
+  course_name text NOT NULL,
+  completion_date text NOT NULL,
+  total_hours text NOT NULL,
+  issued_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 
 -- =========== 2. HABILITAR ROW LEVEL SECURITY (RLS) ===========
 
@@ -62,6 +96,8 @@ ALTER TABLE forum_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE module_progress ENABLE ROW LEVEL SECURITY;
 ALTER TABLE forum_comment_likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE forum_comment_reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE trail_module_requirements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE certificates ENABLE ROW LEVEL SECURITY;
 
 -- Função auxiliar para validar o token JWT gerado pelo Clerk
 -- O Clerk envia o sub (user_id) no token e nós o acessamos usando auth.jwt()
@@ -117,3 +153,112 @@ USING (requesting_user_id() = user_id);
 CREATE POLICY "Usuário pode atualizar/inserir próprio progresso"
 ON module_progress FOR ALL
 USING (requesting_user_id() = user_id);
+
+
+-- Políticas para certificates
+CREATE POLICY "Usuário pode visualizar próprios certificados"
+ON certificates FOR SELECT
+USING (requesting_user_id() = user_id);
+
+CREATE OR REPLACE FUNCTION validate_certificate(certificate_code text)
+RETURNS TABLE (
+  code text,
+  trail_slug text,
+  user_name text,
+  course_name text,
+  completion_date text,
+  total_hours text,
+  issued_at timestamp with time zone
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT
+    certificates.code,
+    certificates.trail_slug,
+    certificates.user_name,
+    certificates.course_name,
+    certificates.completion_date,
+    certificates.total_hours,
+    certificates.issued_at
+  FROM certificates
+  WHERE certificates.code = upper(trim(certificate_code))
+  LIMIT 1;
+$$;
+
+GRANT EXECUTE ON FUNCTION validate_certificate(text) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION issue_certificate(
+  certificate_code text,
+  certificate_trail_slug text,
+  certificate_user_name text,
+  certificate_course_name text,
+  certificate_completion_date text,
+  certificate_total_hours text
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  requester text := requesting_user_id();
+  normalized_code text := upper(trim(certificate_code));
+  required_count integer;
+  completed_count integer;
+BEGIN
+  IF requester IS NULL THEN
+    RAISE EXCEPTION 'Usuário não autenticado';
+  END IF;
+
+  IF normalized_code !~ '^CERT-[A-F0-9]{8,32}$' THEN
+    RAISE EXCEPTION 'Código de certificado inválido';
+  END IF;
+
+  SELECT count(*)
+  INTO required_count
+  FROM trail_module_requirements
+  WHERE trail_slug = certificate_trail_slug;
+
+  IF required_count = 0 THEN
+    RAISE EXCEPTION 'Trilha não encontrada';
+  END IF;
+
+  SELECT count(DISTINCT module_progress.module_id)
+  INTO completed_count
+  FROM module_progress
+  INNER JOIN trail_module_requirements
+    ON trail_module_requirements.trail_slug = module_progress.trail_slug
+    AND trail_module_requirements.module_id = module_progress.module_id
+  WHERE module_progress.user_id = requester
+    AND module_progress.trail_slug = certificate_trail_slug
+    AND module_progress.completed = true;
+
+  IF completed_count < required_count THEN
+    RAISE EXCEPTION 'Trilha não concluída';
+  END IF;
+
+  INSERT INTO certificates (
+    code,
+    user_id,
+    trail_slug,
+    user_name,
+    course_name,
+    completion_date,
+    total_hours
+  )
+  VALUES (
+    normalized_code,
+    requester,
+    certificate_trail_slug,
+    certificate_user_name,
+    certificate_course_name,
+    certificate_completion_date,
+    certificate_total_hours
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION issue_certificate(text, text, text, text, text, text) TO authenticated;
