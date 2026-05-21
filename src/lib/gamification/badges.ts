@@ -37,7 +37,7 @@ export async function fetchUserGamification(userId: string): Promise<UserGamific
       if (moduleState && moduleState.completed) {
         completedModulesInTrail++;
         hasAnyProgress = true;
-        trailXp += Math.floor((moduleState.quiz_score || 0) * ((trilha.totalXp / trilha.modulos.length) / (moduleState.quiz_total || 1)));
+        trailXp += Math.floor((moduleState.quiz_score || 0) * (mod.xp / (moduleState.quiz_total || 1)));
         
         if (moduleState.quiz_score === moduleState.quiz_total && (moduleState.quiz_total || 0) > 0) {
           perfectQuizzes++;
