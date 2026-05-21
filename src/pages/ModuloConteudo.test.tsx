@@ -1,7 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fetchRemoteForumComments } from "../lib/forumRemote.ts";
 import ModuloConteudo from "./ModuloConteudo.tsx";
 
 const clerkState = vi.hoisted<{
@@ -95,14 +96,21 @@ describe("ModuloConteudo", () => {
     expect(screen.getByText(/nunca explicaram isso de forma tão clara/i)).toBeInTheDocument();
   });
 
-  it("usa comentarios mockados quando o forum remoto esta vazio", async () => {
+  it("mantem o forum remoto vazio quando a consulta retorna sem comentarios", async () => {
     forumRemoteState.canRead = true;
     forumRemoteState.comments = [];
+    const fetchRemoteForumCommentsMock = vi.mocked(fetchRemoteForumComments);
 
     renderModulo();
 
-    expect(await screen.findByText(/maria santos/i)).toBeInTheDocument();
-    expect(screen.getByText(/nunca explicaram isso de forma tão clara/i)).toBeInTheDocument();
+    await waitFor(() => expect(fetchRemoteForumCommentsMock).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      await fetchRemoteForumCommentsMock.mock.results[0].value;
+    });
+
+    expect(screen.getByText(/0 tópicos/i)).toBeInTheDocument();
+    expect(screen.queryByText(/maria santos/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/nunca explicaram isso de forma tão clara/i)).not.toBeInTheDocument();
   });
 
   it("publica uma nova mensagem no forum", async () => {

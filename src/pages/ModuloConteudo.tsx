@@ -155,7 +155,7 @@ export default function ModuloConteudo() {
     if (useRemoteForum) {
       try {
         const remoteComments = await fetchRemoteForumComments(slugValue, modId);
-        if (remoteComments && remoteComments.length > 0) {
+        if (remoteComments) {
           setForumComments(remoteComments);
           return;
         }
