@@ -6,6 +6,7 @@ import { Download, Loader2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { getSupabaseClient } from "../../lib/supabaseConfig";
 import { issueCertificate } from "../../lib/certificates";
+import type { CertificateRecord } from "../../lib/certificates";
 import { trilhas } from "../../data/mock";
 import logo from "../../../public/logo_FC_transparente.png";
 
@@ -29,13 +30,18 @@ const CertificateGenerator: FC<CertificateGeneratorProps> = ({
   const certificateRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
   const [certificateCode, setCertificateCode] = useState<string | null>(null);
+  const [certificateDetails, setCertificateDetails] =
+    useState<Pick<CertificateRecord, "userName" | "courseName" | "completionDate" | "totalHours">>({
+      userName,
+      courseName,
+      completionDate,
+      totalHours,
+    });
 
   const generatePDF = async () => {
     if (!certificateRef.current) return;
     const code =
       `CERT-${crypto.randomUUID().replace(/-/g, "").slice(0, 16).toUpperCase()}`;
-    setCertificateCode(code);
-    await new Promise(resolve => setTimeout(resolve, 100));
     setLoading(true);
 
     try {
@@ -59,18 +65,22 @@ const CertificateGenerator: FC<CertificateGeneratorProps> = ({
 
       if (!isActuallyCompleted) {
         alert("Ops! Parece que você ainda não completou 100% desta trilha.");
-        setLoading(false);
         return;
       }
 
-      await issueCertificate({
+      const issuedCertificate = await issueCertificate({
         code,
         trailSlug,
-        userName,
-        courseName,
-        completionDate,
-        totalHours,
       });
+
+      setCertificateCode(issuedCertificate.code);
+      setCertificateDetails({
+        userName: issuedCertificate.userName,
+        courseName: issuedCertificate.courseName,
+        completionDate: issuedCertificate.completionDate,
+        totalHours: issuedCertificate.totalHours,
+      });
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // 2. Geração do PDF
       const element = certificateRef.current;
@@ -96,7 +106,7 @@ const CertificateGenerator: FC<CertificateGeneratorProps> = ({
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Certificado_MackSeguro_${courseName.replace(/\s+/g, "_")}.pdf`);
+      pdf.save(`Certificado_MackSeguro_${issuedCertificate.courseName.replace(/\s+/g, "_")}.pdf`);
     } catch (err) {
       console.error("Erro ao gerar certificado", err);
     } finally {
@@ -182,15 +192,15 @@ const CertificateGenerator: FC<CertificateGeneratorProps> = ({
                 borderBottom: "2px solid #d1d5db",
               }}
             >
-              {userName}
+              {certificateDetails.userName}
             </h2>
 
             <div
               className="text-lg max-w-3xl mx-auto leading-relaxed mb-16"
               style={{ color: "#4b5563" }}
             >
-              concluiu com êxito a trilha de conhecimento <strong>"{courseName}"</strong>,
-              com carga horária estimada de <strong>{totalHours}</strong>,
+              concluiu com êxito a trilha de conhecimento <strong>"{certificateDetails.courseName}"</strong>,
+              com carga horária estimada de <strong>{certificateDetails.totalHours}</strong>,
               desenvolvendo competências e habilidades em Prevenção de Riscos Digitais
               para a família e sociedade.
             </div>
@@ -211,7 +221,7 @@ const CertificateGenerator: FC<CertificateGeneratorProps> = ({
                   className="font-bold mt-1"
                   style={{ color: "#8F1413" }}
                 >
-                  {completionDate}
+                  {certificateDetails.completionDate}
                 </p>
               </div>
 

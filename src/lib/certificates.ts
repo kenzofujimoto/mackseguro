@@ -23,10 +23,6 @@ interface CertificateRow {
 interface IssueCertificateInput {
   code: string;
   trailSlug: string;
-  userName: string;
-  courseName: string;
-  completionDate: string;
-  totalHours: string;
 }
 
 function mapCertificateRow(row: CertificateRow): CertificateRecord {
@@ -41,24 +37,29 @@ function mapCertificateRow(row: CertificateRow): CertificateRecord {
   };
 }
 
-export async function issueCertificate(input: IssueCertificateInput): Promise<void> {
+export async function issueCertificate(
+  input: IssueCertificateInput,
+): Promise<CertificateRecord> {
   const client = getSupabaseClient();
   if (!client) {
     throw new Error("Erro de infraestrutura: Banco de dados indisponível.");
   }
 
-  const { error } = await client.rpc("issue_certificate", {
+  const { data, error } = await client.rpc("issue_certificate", {
     certificate_code: input.code,
     certificate_trail_slug: input.trailSlug,
-    certificate_user_name: input.userName,
-    certificate_course_name: input.courseName,
-    certificate_completion_date: input.completionDate,
-    certificate_total_hours: input.totalHours,
   });
 
   if (error) {
     throw new Error("Erro ao registrar certificado: " + error.message);
   }
+
+  const [row] = (data ?? []) as CertificateRow[];
+  if (!row) {
+    throw new Error("Erro ao registrar certificado: resposta inválida.");
+  }
+
+  return mapCertificateRow(row);
 }
 
 export async function fetchCertificateByCode(
