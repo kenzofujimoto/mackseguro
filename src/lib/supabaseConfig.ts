@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseBooleanEnv } from "./clerkConfig.ts";
 
 type SupabaseEnv = Readonly<
@@ -20,6 +20,7 @@ export interface SupabaseRuntimeConfig {
 
 let cachedConfig: SupabaseRuntimeConfig | null = null;
 let cachedClient: SupabaseClient | null | undefined;
+let cachedClientPromise: Promise<SupabaseClient | null> | null = null;
 let customTokenGetter: (() => Promise<string | null>) | null = null;
 
 export function setSupabaseTokenGetter(
@@ -73,15 +74,19 @@ export function shouldReadFromSupabase(
   return config.configured && config.readEnabled;
 }
 
-export function getSupabaseClient(
+export async function getSupabaseClient(
   config: SupabaseRuntimeConfig = getSupabaseRuntimeConfig(),
-): SupabaseClient | null {
+): Promise<SupabaseClient | null> {
   if (!config.configured) {
     return null;
   }
 
   if (cachedClient !== undefined) {
     return cachedClient;
+  }
+
+  if (cachedClientPromise) {
+    return cachedClientPromise;
   }
 
   const options: Record<string, unknown> = {
@@ -110,7 +115,15 @@ export function getSupabaseClient(
     },
   };
 
-  cachedClient = createClient(config.url, config.anonKey, options);
+  cachedClientPromise = import("@supabase/supabase-js")
+    .then(({ createClient }) => {
+      cachedClient = createClient(config.url, config.anonKey, options);
+      return cachedClient;
+    })
+    .catch((error) => {
+      cachedClientPromise = null;
+      throw error;
+    });
 
-  return cachedClient;
+  return cachedClientPromise;
 }
