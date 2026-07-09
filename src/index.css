@@ -533,6 +533,27 @@ textarea.field-control {
   animation: soft-rise 420ms var(--easing-standard) both;
 }
 
+.event-ticket-date-stub {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.13) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.event-ticket-list .event-ticket:nth-child(2) {
+  animation-delay: 90ms;
+}
+
+.event-ticket-list .event-ticket:nth-child(3) {
+  animation-delay: 180ms;
+}
+
+.event-ticket-list .event-ticket:nth-child(4) {
+  animation-delay: 270ms;
+}
+
+.event-ticket-list .event-ticket:nth-child(5) {
+  animation-delay: 360ms;
+}
+
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
