@@ -88,7 +88,7 @@ Se voce quer habilitar a sincronizacao com banco de dados:
 
 1. **No Clerk Dashboard:**
    - Va em **JWT Templates** e crie um template chamado `supabase`
-   - Payload: `{ "aud": "authenticated", "role": "authenticated" }`
+   - Payload: `{ "aud": "authenticated", "role": "authenticated", "given_name": "{{user.first_name}}", "family_name": "{{user.last_name}}", "email": "{{user.primary_email_address}}" }`
    - Desative "Custom signing key"
    - Copie o dominio do campo Issuer
 

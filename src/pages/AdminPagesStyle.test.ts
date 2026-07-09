@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import adminTrailsPage from "./admin/AdminTrailsPage.tsx?raw";
 import createTrailPage from "./admin/CreateTrailPage.tsx?raw";
 import editModulePage from "./admin/EditModulePage.tsx?raw";
+import editQuizQuestionPage from "./admin/EditQuizQuestionPage.tsx?raw";
 import editTrailPage from "./admin/EditTrailPage.tsx?raw";
 import moduleContentPage from "./admin/ModuleContentPage.tsx?raw";
 import moduleQuizPage from "./admin/ModuleQuizPage.tsx?raw";
@@ -11,6 +12,7 @@ const adminPageSources = [
   ["AdminTrailsPage.tsx", adminTrailsPage],
   ["CreateTrailPage.tsx", createTrailPage],
   ["EditModulePage.tsx", editModulePage],
+  ["EditQuizQuestionPage.tsx", editQuizQuestionPage],
   ["EditTrailPage.tsx", editTrailPage],
   ["ModuleContentPage.tsx", moduleContentPage],
   ["ModuleQuizPage.tsx", moduleQuizPage],

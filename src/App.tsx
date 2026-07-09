@@ -1,35 +1,34 @@
 import React from "react";
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, Outlet } from "react-router-dom";
 import { useAuth } from "@clerk/react";
 import { setSupabaseTokenGetter } from "./lib/supabaseConfig.ts";
-import { syncRemoteProgressToLocal } from "./lib/userData.ts";
-
 import Navbar from "./components/layout/Navbar.tsx";
 import Footer from "./components/layout/Footer.tsx";
-
-import Home from "./pages/Home.tsx";
-import Trilhas from "./pages/Trilhas.tsx";
-import TrilhaDetalhe from "./pages/TrilhaDetalhe.tsx";
-import Materiais from "./pages/Materiais.tsx";
-import Pilulas from "./pages/Pilulas.tsx";
-import Eventos from "./pages/Eventos.tsx";
-import Sobre from "./pages/Sobre.tsx";
-import ModuloConteudo from "./pages/ModuloConteudo.tsx";
-import AuthSignIn from "./pages/AuthSignIn.tsx";
-import AuthSignUp from "./pages/AuthSignUp.tsx";
-import Perfil from "./pages/Perfil.tsx";
-
 import CourseAccessGate from "./components/auth/CourseAccessGate.tsx";
 import ProtectedAdminRoute from "./components/auth/ProtectedAdminRoute.tsx";
+import FontSizeControl from "./components/layout/FontSizeControl.tsx";
+import { syncRemoteProgressToLocal } from "./lib/userData.ts";
 
-import { AdminTrailsPage } from "./pages/admin/AdminTrailsPage.tsx";
-import { CreateTrailPage } from "./pages/admin/CreateTrailPage.tsx";
-import { EditTrailPage } from "./pages/admin/EditTrailPage.tsx";
-import { TrailModulesPage } from "./pages/admin/TrailModulesPage.tsx";
-import { EditModulePage } from "./pages/admin/EditModulePage.tsx";
-
-import ModuleContentPage from "./pages/admin/ModuleContentPage.tsx";
-import ModuleQuizPage from "./pages/admin/ModuleQuizPage.tsx";
+const Home = React.lazy(() => import("./pages/Home.tsx"));
+const Trilhas = React.lazy(() => import("./pages/Trilhas.tsx"));
+const TrilhaDetalhe = React.lazy(() => import("./pages/TrilhaDetalhe.tsx"));
+const Materiais = React.lazy(() => import("./pages/Materiais.tsx"));
+const Pilulas = React.lazy(() => import("./pages/Pilulas.tsx"));
+const Eventos = React.lazy(() => import("./pages/Eventos.tsx"));
+const Sobre = React.lazy(() => import("./pages/Sobre.tsx"));
+const ModuloConteudo = React.lazy(() => import("./pages/ModuloConteudo.tsx"));
+const AuthSignIn = React.lazy(() => import("./pages/AuthSignIn.tsx"));
+const AuthSignUp = React.lazy(() => import("./pages/AuthSignUp.tsx"));
+const Perfil = React.lazy(() => import("./pages/Perfil.tsx"));
+const CertificadoValidacao = React.lazy(() => import("./pages/CertificadoValidacao.tsx"));
+const AdminTrailsPage = React.lazy(() => import("./pages/admin/AdminTrailsPage.tsx"));
+const CreateTrailPage = React.lazy(() => import("./pages/admin/CreateTrailPage.tsx"));
+const EditTrailPage = React.lazy(() => import("./pages/admin/EditTrailPage.tsx"));
+const TrailModulesPage = React.lazy(() => import("./pages/admin/TrailModulesPage.tsx"));
+const EditModulePage = React.lazy(() => import("./pages/admin/EditModulePage.tsx"));
+const ModuleContentPage = React.lazy(() => import("./pages/admin/ModuleContentPage.tsx"));
+const ModuleQuizPage = React.lazy(() => import("./pages/admin/ModuleQuizPage.tsx"));
+const EditQuizQuestionPage = React.lazy(() => import("./pages/admin/EditQuizQuestionPage.tsx"));
 
 function NotFoundPage() {
   return (
@@ -41,10 +40,7 @@ function NotFoundPage() {
         O endereço informado não existe no MackSeguro.
       </p>
       <div className="mt-6">
-        <Link
-          to="/"
-          className="font-semibold text-[var(--color-mack)] hover:underline"
-        >
+        <Link to="/" className="font-semibold text-[var(--color-mack)] hover:underline">
           Voltar para Home
         </Link>
       </div>
@@ -52,11 +48,15 @@ function NotFoundPage() {
   );
 }
 
-function AppLayout({ children }: { children: React.ReactNode }) {
+/** Layout for app pages (trilhas, materiais, etc.) — includes Navbar + Footer */
+function AppLayout() {
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar />
-      <main className="page-shell flex-1">{children}</main>
+      <FontSizeControl />
+      <main className="page-shell flex-1">
+        <Outlet />
+      </main>
       <Footer />
     </div>
   );
@@ -64,10 +64,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
 function ClerkSupabaseIntegration() {
   const { getToken, userId } = useAuth();
-
   React.useEffect(() => {
     setSupabaseTokenGetter(() => getToken({ template: "supabase" }));
-
     return () => {
       setSupabaseTokenGetter(null);
     };
@@ -86,101 +84,38 @@ function App() {
   return (
     <>
       <ClerkSupabaseIntegration />
+      <React.Suspense fallback={null}>
+        <Routes>
+          <Route path="/auth/sign-in/*" element={<AuthSignIn />} />
+          <Route path="/auth/sign-up/*" element={<AuthSignUp />} />
 
-      <Routes>
-        <Route path="/auth/sign-in/*" element={<AuthSignIn />} />
-        <Route path="/auth/sign-up/*" element={<AuthSignUp />} />
-
-        <Route path="/" element={<AppLayout><Home /></AppLayout>} />
-        <Route path="/trilhas" element={<AppLayout><Trilhas /></AppLayout>} />
-        <Route path="/trilhas/:slug" element={<AppLayout><TrilhaDetalhe /></AppLayout>} />
-        <Route
-          path="/trilhas/:slug/modulo/:moduloId"
-          element={
-            <AppLayout>
-              <CourseAccessGate>
-                <ModuloConteudo />
-              </CourseAccessGate>
-            </AppLayout>
-          }
-        />
-
-        <Route path="/materiais" element={<AppLayout><Materiais /></AppLayout>} />
-        <Route path="/pilulas" element={<AppLayout><Pilulas /></AppLayout>} />
-        <Route path="/eventos" element={<AppLayout><Eventos /></AppLayout>} />
-        <Route path="/sobre" element={<AppLayout><Sobre /></AppLayout>} />
-        <Route
-          path="/perfil"
-          element={
-            <AppLayout>
-              <CourseAccessGate>
-                <Perfil />
-              </CourseAccessGate>
-            </AppLayout>
-          }
-        />
-
-        <Route
-          path="/admin/trilhas"
-          element={
-            <ProtectedAdminRoute>
-              <AdminTrailsPage />
-            </ProtectedAdminRoute>
-          }
-        />
-        <Route
-          path="/admin/trilhas/nova"
-          element={
-            <ProtectedAdminRoute>
-              <CreateTrailPage />
-            </ProtectedAdminRoute>
-          }
-        />
-        <Route
-          path="/admin/trilhas/:id/editar"
-          element={
-            <ProtectedAdminRoute>
-              <EditTrailPage />
-            </ProtectedAdminRoute>
-          }
-        />
-        <Route
-          path="/admin/trilhas/:id/modulos"
-          element={
-            <ProtectedAdminRoute>
-              <TrailModulesPage />
-            </ProtectedAdminRoute>
-          }
-        />
-        <Route
-          path="/admin/modulos/:id/editar"
-          element={
-            <ProtectedAdminRoute>
-              <EditModulePage />
-            </ProtectedAdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/modulos/:id/conteudo"
-          element={
-            <ProtectedAdminRoute>
-              <ModuleContentPage />
-            </ProtectedAdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/modulos/:id/quiz"
-          element={
-            <ProtectedAdminRoute>
-              <ModuleQuizPage />
-            </ProtectedAdminRoute>
-          }
-        />
-
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+          {/* App pages — shared Navbar + Footer */}
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/trilhas" element={<Trilhas />} />
+            <Route path="/trilhas/:slug" element={<TrilhaDetalhe />} />
+            <Route
+              path="/trilhas/:slug/modulo/:moduloId"
+              element={<CourseAccessGate><ModuloConteudo /></CourseAccessGate>}
+            />
+            <Route path="/materiais" element={<Materiais />} />
+            <Route path="/pilulas" element={<Pilulas />} />
+            <Route path="/eventos" element={<Eventos />} />
+            <Route path="/sobre" element={<Sobre />} />
+            <Route path="/perfil" element={<CourseAccessGate><Perfil /></CourseAccessGate>} />
+            <Route path="/certificados/:certificateCode" element={<CertificadoValidacao />} />
+            <Route path="/admin/trilhas" element={<ProtectedAdminRoute><AdminTrailsPage /></ProtectedAdminRoute>} />
+            <Route path="/admin/trilhas/nova" element={<ProtectedAdminRoute><CreateTrailPage /></ProtectedAdminRoute>} />
+            <Route path="/admin/trilhas/:id/editar" element={<ProtectedAdminRoute><EditTrailPage /></ProtectedAdminRoute>} />
+            <Route path="/admin/trilhas/:id/modulos" element={<ProtectedAdminRoute><TrailModulesPage /></ProtectedAdminRoute>} />
+            <Route path="/admin/modulos/:id/editar" element={<ProtectedAdminRoute><EditModulePage /></ProtectedAdminRoute>} />
+            <Route path="/admin/modulos/:id/conteudo" element={<ProtectedAdminRoute><ModuleContentPage /></ProtectedAdminRoute>} />
+            <Route path="/admin/modulos/:id/quiz" element={<ProtectedAdminRoute><ModuleQuizPage /></ProtectedAdminRoute>} />
+            <Route path="/admin/quiz/:id/editar" element={<ProtectedAdminRoute><EditQuizQuestionPage /></ProtectedAdminRoute>} />
+          </Route>
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </React.Suspense>
     </>
   );
 }

@@ -1,10 +1,14 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
-import { supabase } from "../../lib/supabaseConfig.ts";
+import {
+  getSupabaseErrorMessage,
+  getUnknownErrorMessage,
+  requireSupabaseClient,
+} from "../../lib/adminSupabase.ts";
 
 type ModuleContent = {
-  id: string;
-  module_id: string;
+  id: number;
+  module_id: number;
   video_url: string | null;
   texto: string | null;
 };
@@ -12,9 +16,7 @@ type ModuleContent = {
 function normalizeVideoUrl(url: string): string {
   const value = url.trim();
 
-  if (!value) return "";
-
-  if (value.includes("youtube.com/embed/")) {
+  if (!value || value.includes("youtube.com/embed/")) {
     return value;
   }
 
@@ -34,13 +36,11 @@ function normalizeVideoUrl(url: string): string {
 export default function ModuleContentPage() {
   const { id } = useParams();
 
-  const [contentId, setContentId] = useState("");
+  const [contentId, setContentId] = useState<number | null>(null);
   const [videoUrl, setVideoUrl] = useState("");
   const [texto, setTexto] = useState("");
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
   const [mensagem, setMensagem] = useState("");
   const [erro, setErro] = useState("");
 
@@ -49,57 +49,47 @@ export default function ModuleContentPage() {
     setErro("");
     setMensagem("");
 
-    if (!supabase) {
-      setErro("Supabase não configurado.");
-      setLoading(false);
-      return;
-    }
-
     if (!id) {
       setErro("ID do módulo não informado.");
       setLoading(false);
       return;
     }
 
-    const { data, error } = await supabase
-      .from("module_contents")
-      .select("*")
-      .eq("module_id", id)
-      .maybeSingle();
+    try {
+      const supabase = await requireSupabaseClient();
+      const { data, error } = await supabase
+        .from("module_contents")
+        .select("*")
+        .eq("module_id", Number(id))
+        .maybeSingle();
 
-    if (error) {
-      setErro(error.message);
+      if (error) {
+        setErro(getSupabaseErrorMessage(error));
+        return;
+      }
+
+      if (data) {
+        const content = data as ModuleContent;
+        setContentId(content.id);
+        setVideoUrl(content.video_url ?? "");
+        setTexto(content.texto ?? "");
+      }
+    } catch (error) {
+      setErro(getUnknownErrorMessage(error));
+    } finally {
       setLoading(false);
-      return;
     }
-
-    if (data) {
-      const content = data as ModuleContent;
-
-      setContentId(content.id);
-      setVideoUrl(content.video_url || "");
-      setTexto(content.texto || "");
-    }
-
-    setLoading(false);
   }
 
   useEffect(() => {
-    carregarConteudo();
+    void carregarConteudo();
   }, [id]);
 
-  async function salvarConteudo(e: FormEvent) {
-    e.preventDefault();
-
+  async function salvarConteudo(event: FormEvent) {
+    event.preventDefault();
     setSaving(true);
     setErro("");
     setMensagem("");
-
-    if (!supabase) {
-      setErro("Supabase não configurado.");
-      setSaving(false);
-      return;
-    }
 
     if (!id) {
       setErro("ID do módulo não informado.");
@@ -113,91 +103,100 @@ export default function ModuleContentPage() {
       return;
     }
 
-    if (contentId) {
-      const { error } = await supabase
-        .from("module_contents")
-        .update({
-          video_url: normalizeVideoUrl(videoUrl),
-          texto: texto.trim(),
-        })
-        .eq("id", contentId);
+    try {
+      const supabase = await requireSupabaseClient();
+      const payload = {
+        module_id: Number(id),
+        video_url: normalizeVideoUrl(videoUrl),
+        texto: texto.trim(),
+      };
 
-      setSaving(false);
+      if (contentId) {
+        const { error } = await supabase
+          .from("module_contents")
+          .update(payload)
+          .eq("id", contentId);
 
-      if (error) {
-        setErro(error.message);
+        if (error) {
+          setErro(getSupabaseErrorMessage(error));
+          return;
+        }
+
+        setMensagem("Conteúdo atualizado com sucesso.");
         return;
       }
 
-      setMensagem("Conteúdo atualizado com sucesso.");
-      return;
+      const { data, error } = await supabase
+        .from("module_contents")
+        .insert(payload)
+        .select()
+        .single();
+
+      if (error) {
+        setErro(getSupabaseErrorMessage(error));
+        return;
+      }
+
+      setContentId((data as ModuleContent).id);
+      setMensagem("Conteúdo criado com sucesso.");
+    } catch (error) {
+      setErro(getUnknownErrorMessage(error));
+    } finally {
+      setSaving(false);
     }
-
-    const { data, error } = await supabase
-      .from("module_contents")
-      .insert({
-        module_id: id,
-        video_url: videoUrl.trim(),
-        texto: texto.trim(),
-      })
-      .select()
-      .single();
-
-    setSaving(false);
-
-    if (error) {
-      setErro(error.message);
-      return;
-    }
-
-    setContentId(data.id);
-    setMensagem("Conteúdo criado com sucesso.");
   }
 
   if (loading) {
     return (
-      <div style={{ padding: 40 }}>
-        <h1>Carregando conteúdo...</h1>
-      </div>
+      <section className="bg-[var(--color-bg-surface)] px-4 py-14">
+        <div className="mx-auto max-w-3xl">
+          <h1 className="text-2xl font-bold text-[var(--color-text)]">
+            Carregando conteúdo...
+          </h1>
+        </div>
+      </section>
     );
   }
 
   return (
-    <div style={{ padding: 40 }}>
-      <Link to="/admin/trilhas">← Voltar para Trilhas</Link>
+    <section className="bg-[var(--color-bg-surface)] px-4 py-14">
+      <div className="mx-auto max-w-3xl">
+        <Link to="/admin/trilhas" className="text-sm font-medium text-[var(--color-mack)] hover:underline">
+          Voltar para trilhas
+        </Link>
 
-      <h1>Conteúdo do Módulo</h1>
+        <h1 className="mt-3 text-2xl font-bold text-[var(--color-text)]">
+          Conteúdo do módulo
+        </h1>
 
-      {mensagem && <p style={{ color: "green" }}>{mensagem}</p>}
-      {erro && <p style={{ color: "red" }}>{erro}</p>}
+        {mensagem && (
+          <p className="mt-5 rounded-md border border-[var(--color-emerald)]/30 bg-[var(--color-emerald-light)] px-3 py-2 text-sm text-[var(--color-emerald)]">
+            {mensagem}
+          </p>
+        )}
 
-      <form
-        onSubmit={salvarConteudo}
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-          maxWidth: 700,
-          marginTop: 24,
-        }}
-      >
-        <input
-          placeholder="URL do vídeo"
-          value={videoUrl}
-          onChange={(e) => setVideoUrl(e.target.value)}
-        />
+        {erro && (
+          <p role="alert" className="mt-5 rounded-md border border-[var(--color-rose)]/30 bg-[var(--color-rose-light)] px-3 py-2 text-sm text-[var(--color-rose)]">
+            {erro}
+          </p>
+        )}
 
-        <textarea
-          placeholder="Texto teórico do módulo"
-          value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-          rows={12}
-        />
+        <form onSubmit={salvarConteudo} className="mt-6 space-y-4">
+          <label className="block text-sm font-medium text-[var(--color-text-secondary)]">
+            URL do vídeo
+            <input className="field-control mt-1" value={videoUrl} onChange={(event) => setVideoUrl(event.target.value)} />
+          </label>
 
-        <button type="submit" disabled={saving}>
-          {saving ? "Salvando..." : "Salvar conteúdo"}
-        </button>
-      </form>
-    </div>
+          <label className="block text-sm font-medium text-[var(--color-text-secondary)]">
+            Texto teórico do módulo
+            <textarea className="field-control mt-1" value={texto} onChange={(event) => setTexto(event.target.value)} rows={12} />
+          </label>
+
+          <button type="submit" className="btn-primary" disabled={saving}>
+            {saving ? "Salvando..." : "Salvar conteúdo"}
+          </button>
+        </form>
+      </div>
+    </section>
   );
 }

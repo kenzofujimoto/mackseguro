@@ -1,5 +1,5 @@
 import { trilhas } from "../../data/mock";
-import { fetchRemoteModuleProgress } from "../remotePersistence";
+import { fetchRemoteModuleProgress, type RemoteModuleProgressRow } from "../remotePersistence";
 
 export type Badge = {
   id: string;
@@ -14,6 +14,7 @@ export type UserGamification = {
   badges: Badge[];
   totalXp: number;
   completedTrails: typeof trilhas;
+  progressRows: RemoteModuleProgressRow[];
 };
 
 export async function fetchUserGamification(userId: string): Promise<UserGamification> {
@@ -36,7 +37,7 @@ export async function fetchUserGamification(userId: string): Promise<UserGamific
       if (moduleState && moduleState.completed) {
         completedModulesInTrail++;
         hasAnyProgress = true;
-        trailXp += (moduleState.quiz_score || 0) * 10;
+        trailXp += Math.floor((moduleState.quiz_score || 0) * (mod.xp / (moduleState.quiz_total || 1)));
         
         if (moduleState.quiz_score === moduleState.quiz_total && (moduleState.quiz_total || 0) > 0) {
           perfectQuizzes++;
@@ -91,5 +92,6 @@ export async function fetchUserGamification(userId: string): Promise<UserGamific
     badges,
     totalXp,
     completedTrails,
+    progressRows: remoteProgressRows,
   };
 }

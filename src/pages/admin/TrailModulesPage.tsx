@@ -1,9 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
-import { supabase } from "../../lib/supabaseConfig.ts";
+import {
+  getSupabaseErrorMessage,
+  getUnknownErrorMessage,
+  requireSupabaseClient,
+} from "../../lib/adminSupabase.ts";
 
-type Module = {
-  id: string;
+type TrailModule = {
+  id: number;
   title: string;
   description: string | null;
   xp: number;
@@ -14,25 +18,16 @@ type Module = {
 export function TrailModulesPage() {
   const { id } = useParams();
 
-  const [modules, setModules] = useState<Module[]>([]);
-
+  const [modules, setModules] = useState<TrailModule[]>([]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
   const [erro, setErro] = useState("");
 
   async function carregarModulos() {
+    setLoading(true);
     setErro("");
-
-    if (!supabase) {
-      setErro("Supabase não configurado.");
-      setModules([]);
-      setLoading(false);
-      return;
-    }
 
     if (!id) {
       setErro("ID da trilha não informado.");
@@ -41,39 +36,41 @@ export function TrailModulesPage() {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("modules")
-      .select("*")
-      .eq("trail_id", id)
-      .order("position", { ascending: true });
+    try {
+      const supabase = await requireSupabaseClient();
+      const { data, error } = await supabase
+        .from("modules")
+        .select("*")
+        .eq("trail_id", Number(id))
+        .order("position", { ascending: true });
 
-    if (error) {
-      setErro(error.message);
+      if (error) {
+        setErro(getSupabaseErrorMessage(error));
+        setModules([]);
+        return;
+      }
+
+      setModules((data as TrailModule[]) ?? []);
+    } catch (error) {
+      setErro(getUnknownErrorMessage(error));
       setModules([]);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setModules(data || []);
-    setLoading(false);
   }
 
   useEffect(() => {
-    carregarModulos();
+    void carregarModulos();
   }, [id]);
 
-  async function criarModulo(e: FormEvent) {
-    e.preventDefault();
-
+  async function criarModulo(event: FormEvent) {
+    event.preventDefault();
     setErro("");
 
-    if (!title.trim()) {
-      setErro("Informe o título do módulo.");
-      return;
-    }
+    const normalizedTitle = title.trim();
 
-    if (!supabase) {
-      setErro("Supabase não configurado.");
+    if (!normalizedTitle) {
+      setErro("Informe o título do módulo.");
       return;
     }
 
@@ -84,140 +81,147 @@ export function TrailModulesPage() {
 
     setSaving(true);
 
-    const { error } = await supabase
-      .from("modules")
-      .insert({
-        trail_id: id,
-        title: title.trim(),
+    try {
+      const supabase = await requireSupabaseClient();
+      const { error } = await supabase.from("modules").insert({
+        trail_id: Number(id),
+        title: normalizedTitle,
         description: description.trim(),
         position: modules.length + 1,
         xp: 100,
         duration_minutes: 10,
       });
 
-    setSaving(false);
+      if (error) {
+        setErro(getSupabaseErrorMessage(error));
+        return;
+      }
 
-    if (error) {
-      setErro(error.message);
-      return;
+      setTitle("");
+      setDescription("");
+      await carregarModulos();
+    } catch (error) {
+      setErro(getUnknownErrorMessage(error));
+    } finally {
+      setSaving(false);
     }
-
-    setTitle("");
-    setDescription("");
-
-    carregarModulos();
   }
 
-  async function deletarModulo(moduleId: string) {
+  async function deletarModulo(moduleId: number) {
     const confirmar = confirm("Deseja deletar este módulo?");
 
-    if (!confirmar) return;
+    if (!confirmar) {
+      return;
+    }
 
     setErro("");
 
-    if (!supabase) {
-      setErro("Supabase não configurado.");
-      return;
+    try {
+      const supabase = await requireSupabaseClient();
+      const { error } = await supabase.from("modules").delete().eq("id", moduleId);
+
+      if (error) {
+        setErro(getSupabaseErrorMessage(error));
+        return;
+      }
+
+      await carregarModulos();
+    } catch (error) {
+      setErro(getUnknownErrorMessage(error));
     }
-
-    const { error } = await supabase
-      .from("modules")
-      .delete()
-      .eq("id", moduleId);
-
-    if (error) {
-      setErro(error.message);
-      return;
-    }
-
-    carregarModulos();
   }
 
   if (loading) {
-    return <h1>Carregando módulos...</h1>;
+    return (
+      <section className="bg-[var(--color-bg-surface)] px-4 py-14">
+        <div className="mx-auto max-w-4xl">
+          <h1 className="text-2xl font-bold text-[var(--color-text)]">
+            Carregando módulos...
+          </h1>
+        </div>
+      </section>
+    );
   }
 
   return (
-    <div style={{ padding: 40 }}>
-      <Link to="/admin/trilhas">Voltar para Trilhas</Link>
+    <section className="bg-[var(--color-bg-surface)] px-4 py-14">
+      <div className="mx-auto max-w-4xl">
+        <Link to="/admin/trilhas" className="text-sm font-medium text-[var(--color-mack)] hover:underline">
+          Voltar para trilhas
+        </Link>
 
-      <h1>Módulos da Trilha</h1>
+        <h1 className="mt-3 text-2xl font-bold text-[var(--color-text)]">
+          Módulos da trilha
+        </h1>
 
-      {erro && <p style={{ color: "red" }}>{erro}</p>}
+        {erro && (
+          <p role="alert" className="mt-5 rounded-md border border-[var(--color-rose)]/30 bg-[var(--color-rose-light)] px-3 py-2 text-sm text-[var(--color-rose)]">
+            {erro}
+          </p>
+        )}
 
-      <form
-        onSubmit={criarModulo}
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-          maxWidth: 400,
-          marginBottom: 40,
-        }}
-      >
-        <input
-          placeholder="Título do módulo"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
+        <form onSubmit={criarModulo} className="mt-6 space-y-4">
+          <label className="block text-sm font-medium text-[var(--color-text-secondary)]">
+            Título do módulo
+            <input className="field-control mt-1" value={title} onChange={(event) => setTitle(event.target.value)} />
+          </label>
 
-        <textarea
-          placeholder="Descrição"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
+          <label className="block text-sm font-medium text-[var(--color-text-secondary)]">
+            Descrição
+            <textarea className="field-control mt-1" value={description} onChange={(event) => setDescription(event.target.value)} />
+          </label>
 
-        <button type="submit" disabled={saving}>
-          {saving ? "Criando..." : "Criar módulo"}
-        </button>
-      </form>
+          <button type="submit" className="btn-primary" disabled={saving}>
+            {saving ? "Criando..." : "Criar módulo"}
+          </button>
+        </form>
 
-      {modules.length === 0 && <p>Nenhum módulo cadastrado.</p>}
+        <div className="mt-8 space-y-4">
+          {modules.length === 0 && (
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              Nenhum módulo cadastrado.
+            </p>
+          )}
 
-      {modules.map((module) => (
-        <div
-          key={module.id}
-          style={{
-            border: "1px solid #ddd",
-            padding: 16,
-            borderRadius: 8,
-            marginBottom: 12,
-          }}
-        >
-          <h2>{module.title}</h2>
+          {modules.map((module) => (
+            <article key={module.id} className="card-mk p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-[var(--color-text)]">
+                    {module.title}
+                  </h2>
+                  <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+                    {module.description}
+                  </p>
+                  <p className="mt-2 text-xs text-[var(--color-text-muted)]">
+                    XP: {module.xp} · Duração: {module.duration_minutes} min · Ordem: {module.position}
+                  </p>
+                </div>
 
-          <p>{module.description}</p>
-
-          <p>XP: {module.xp}</p>
-
-          <p>Duração: {module.duration_minutes} min</p>
-
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <Link to={`/admin/modulos/${module.id}/editar`}>
-              <button>Editar módulo</button>
-            </Link>
-
-            <Link to={`/admin/modulos/${module.id}/conteudo`}>
-              <button>Editar conteúdo</button>
-            </Link>
-
-            <Link to={`/admin/modulos/${module.id}/quiz`}>
-              <button>Quiz</button>
-            </Link>
-
-            <button
-              onClick={() => deletarModulo(module.id)}
-              style={{
-                background: "red",
-                color: "white",
-              }}
-            >
-              Deletar módulo
-            </button>
-          </div>
+                <div className="flex flex-wrap gap-2">
+                  <Link to={`/admin/modulos/${module.id}/editar`} className="btn-neutral btn-sm">
+                    Editar módulo
+                  </Link>
+                  <Link to={`/admin/modulos/${module.id}/conteudo`} className="btn-neutral btn-sm">
+                    Conteúdo
+                  </Link>
+                  <Link to={`/admin/modulos/${module.id}/quiz`} className="btn-neutral btn-sm">
+                    Quiz
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => void deletarModulo(module.id)}
+                    className="btn-outline btn-sm border-[var(--color-rose)] text-[var(--color-rose)]"
+                  >
+                    Deletar
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
-      ))}
-    </div>
+      </div>
+    </section>
   );
 }
 

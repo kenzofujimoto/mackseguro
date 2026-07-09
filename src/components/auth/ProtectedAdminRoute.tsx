@@ -6,9 +6,27 @@ type Props = {
   children: React.ReactNode;
 };
 
-const ADMIN_EMAILS = [
-  "joaopaulo022005@gmail.com"
-];
+type AdminEnv = Readonly<{
+  VITE_ADMIN_EMAILS?: string;
+}>;
+
+function parseAdminEmails(value: string | undefined): string[] {
+  return (value ?? "")
+    .split(/[,\s;]+/)
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+export function isConfiguredAdminEmail(
+  email: string | undefined,
+  env: AdminEnv = import.meta.env as AdminEnv,
+): boolean {
+  if (!email) {
+    return false;
+  }
+
+  return parseAdminEmails(env.VITE_ADMIN_EMAILS).includes(email.trim().toLowerCase());
+}
 
 export default function ProtectedAdminRoute({ children }: Props) {
   const { isLoaded, isSignedIn } = useAuth();
@@ -24,7 +42,7 @@ export default function ProtectedAdminRoute({ children }: Props) {
 
   const email = user?.primaryEmailAddress?.emailAddress;
 
-  if (!email || !ADMIN_EMAILS.includes(email)) {
+  if (!isConfiguredAdminEmail(email)) {
     return <Navigate to="/" replace />;
   }
 

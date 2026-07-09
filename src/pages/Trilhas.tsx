@@ -1,54 +1,69 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ShieldCheck, Heart, ArrowRight } from "lucide-react";
-import { corMap } from "../data/mock.ts";
-import { loadTrails } from "../lib/trailsRemote.ts";
-import type { CorKey } from "../data/mock.ts";
+import { trilhas as mockTrilhas, corMap } from "../data/mock.ts";
+import type { CorKey, Trilha } from "../data/mock.ts";
 import Seo from "../components/seo/Seo.tsx";
 import { useUserDataRefresh } from "../hooks/useUserDataRefresh.ts";
+import { fetchUserGamification, type UserGamification } from "../lib/gamification/badges";
 import { getTrailEarnedXp, getTrailProgress } from "../lib/userData.ts";
+import { loadTrails } from "../lib/trailsRemote.ts";
+import { useUser } from "@clerk/react";
 
 export default function Trilhas() {
+  const { user, isLoaded } = useUser();
   const dataVersion = useUserDataRefresh();
-
-  const [trilhas, setTrilhas] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [gamification, setGamification] = useState<UserGamification | null>(null);
+  const [trilhas, setTrilhas] = useState<Trilha[]>(mockTrilhas);
 
   useEffect(() => {
-    loadTrails()
-      .then(setTrilhas)
-      .finally(() => setLoading(false));
+    if (!isLoaded) {
+      return;
+    }
+
+    if (!user?.id) {
+      setGamification(null);
+      return;
+    }
+
+    let ignore = false;
+
+    fetchUserGamification(user.id).then((data) => {
+      if (!ignore) {
+        setGamification(data);
+      }
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, [user?.id, dataVersion, isLoaded]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    loadTrails().then((loadedTrails) => {
+      if (!ignore) {
+        setTrilhas(loadedTrails);
+      }
+    }).catch((error) => {
+      console.error("[Trilhas] remote trails load failed", error);
+    });
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
-  const trilhasComProgresso = useMemo(
-    () =>
-      trilhas.map((trilha) => ({
-        trilha,
-        progresso: getTrailProgress(trilha.slug, trilha.modulos.length),
-        xpConquistado: getTrailEarnedXp(trilha),
-      })),
-    [trilhas, dataVersion],
-  );
+  const trilhasComProgresso = useMemo(() => {
+    const rows = gamification?.progressRows ?? [];
 
-  if (loading) {
-    return (
-      <>
-        <Seo
-          title="Trilhas de Aprendizado"
-          description="Explore trilhas interativas do MackSeguro para aprender segurança digital no seu ritmo."
-          canonicalPath="/trilhas"
-        />
-
-        <section className="bg-[var(--color-bg-surface)] px-4 py-14">
-          <div className="mx-auto max-w-7xl">
-            <h1 className="text-2xl font-bold text-[var(--color-text)] sm:text-3xl">
-              Carregando trilhas...
-            </h1>
-          </div>
-        </section>
-      </>
-    );
-  }
+    return trilhas.map((trilha) => ({
+      trilha,
+      progresso: getTrailProgress(trilha.slug, trilha.modulos.length),
+      xpConquistado: getTrailEarnedXp(trilha, rows),
+    }));
+  }, [gamification, dataVersion, trilhas]);
 
   return (
     <>
@@ -70,8 +85,7 @@ export default function Trilhas() {
           <div className="mt-8 grid gap-5 md:grid-cols-2">
             {trilhasComProgresso.map(({ trilha, progresso, xpConquistado }) => {
               const Icon = trilha.icone === "ShieldCheck" ? ShieldCheck : Heart;
-              const cores = corMap[trilha.cor as CorKey] ?? corMap.red;
-
+              const cores = corMap[trilha.cor as CorKey];
               return (
                 <Link
                   key={trilha.id}
@@ -103,7 +117,6 @@ export default function Trilhas() {
                       style={{ width: `${progresso.percentage}%` }}
                     />
                   </div>
-
                   <p className="mb-3 text-xs text-[var(--color-text-muted)]">
                     Progresso: {progresso.percentage}%
                   </p>
@@ -112,7 +125,6 @@ export default function Trilhas() {
                     <span className="text-[var(--color-text-muted)]">
                       {progresso.completedModules}/{trilha.modulos.length} módulos concluídos
                     </span>
-
                     <span className="flex items-center gap-1 font-medium text-[var(--color-mack)]">
                       Acessar trilha
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

@@ -1,10 +1,13 @@
 import { useRef, useState } from "react";
 import type { FC } from "react";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import { Download, Loader2 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { getSupabaseClient } from "../../lib/supabaseConfig";
+import { issueCertificate } from "../../lib/certificates";
+import type { CertificateRecord } from "../../lib/certificates";
 import { trilhas } from "../../data/mock";
+
+const LOGO_URL = "/logo-fci-192.webp";
 
 interface CertificateGeneratorProps {
   userId: string;
@@ -25,14 +28,24 @@ const CertificateGenerator: FC<CertificateGeneratorProps> = ({
 }) => {
   const certificateRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
+  const [certificateCode, setCertificateCode] = useState<string | null>(null);
+  const [certificateDetails, setCertificateDetails] =
+    useState<Pick<CertificateRecord, "userName" | "courseName" | "completionDate" | "totalHours">>({
+      userName,
+      courseName,
+      completionDate,
+      totalHours,
+    });
 
   const generatePDF = async () => {
     if (!certificateRef.current) return;
+    const code =
+      `CERT-${crypto.randomUUID().replace(/-/g, "").slice(0, 16).toUpperCase()}`;
     setLoading(true);
 
     try {
       // 1. Verificação remota de segurança (evita que burlem o localstorage)
-      const supabase = getSupabaseClient();
+      const supabase = await getSupabaseClient();
       if (!supabase) throw new Error("Erro de infraestrutura: Banco de dados indisponível.");
       
       const { data, error } = await supabase
@@ -51,11 +64,29 @@ const CertificateGenerator: FC<CertificateGeneratorProps> = ({
 
       if (!isActuallyCompleted) {
         alert("Ops! Parece que você ainda não completou 100% desta trilha.");
-        setLoading(false);
         return;
       }
 
+      const issuedCertificate = await issueCertificate({
+        code,
+        trailSlug,
+      });
+
+      setCertificateCode(issuedCertificate.code);
+      setCertificateDetails({
+        userName: issuedCertificate.userName,
+        courseName: issuedCertificate.courseName,
+        completionDate: issuedCertificate.completionDate,
+        totalHours: issuedCertificate.totalHours,
+      });
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // 2. Geração do PDF
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+
       const element = certificateRef.current;
       // Tornar visível temporariamente para rampa de captura
       element.style.display = "block";
@@ -79,13 +110,16 @@ const CertificateGenerator: FC<CertificateGeneratorProps> = ({
       const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Certificado_MackSeguro_${courseName.replace(/\s+/g, "_")}.pdf`);
+      pdf.save(`Certificado_MackSeguro_${issuedCertificate.courseName.replace(/\s+/g, "_")}.pdf`);
     } catch (err) {
       console.error("Erro ao gerar certificado", err);
     } finally {
       setLoading(false);
     }
   };
+
+  const validationUrl =
+  `https://mackseguro.com/certificados/${certificateCode}`;
 
   return (
     <>
@@ -106,60 +140,139 @@ const CertificateGenerator: FC<CertificateGeneratorProps> = ({
       <div className="overflow-hidden w-0 h-0 absolute -z-50 left-[-9999px]">
         <div
           ref={certificateRef}
-          className="relative bg-white w-[1122px] h-[793px] p-12 text-gray-800"
+          className="relative w-[1122px] h-[793px] p-12"
           style={{
+            backgroundColor: "#ffffff",
+            color: "#1f2937",
             fontFamily: "sans-serif",
             display: "none",
-            border: "20px solid #8F1413", // Mack Red
+            border: "20px solid #8F1413",
           }}
         >
-          <div className="absolute top-12 left-12 w-32 h-32 opacity-20">
-            {/* Watermark logo or decoration */}
-            <div className="w-full h-full bg-[#8F1413] rounded-full blur-3xl"></div>
+          <div
+            className="absolute top-12 left-12"
+            style={{
+              width: "140px",
+              height: "140px",
+            }}
+          >
+            <img
+              src={LOGO_URL}
+              alt="MackSeguro"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+              }}
+            />
           </div>
-          
+
           <div className="flex flex-col items-center justify-center h-full text-center relative z-10">
-            <h3 className="text-2xl font-bold tracking-widest text-[#8F1413] uppercase mb-4">
+            <h3
+              className="text-2xl font-bold tracking-widest uppercase mb-4"
+              style={{ color: "#8F1413" }}
+            >
               Projeto de Extensão MackSeguro
             </h3>
-            
-            <h1 className="text-6xl font-black text-gray-900 mt-6 mb-12 uppercase">
+
+            <h1
+              className="text-6xl font-black mt-6 mb-12 uppercase"
+              style={{ color: "#111827" }}
+            >
               Certificado de Conclusão
             </h1>
 
-            <p className="text-xl text-gray-600 mb-4">
+            <p
+              className="text-xl mb-4"
+              style={{ color: "#4b5563" }}
+            >
               Certificamos que
             </p>
 
-            <h2 className="text-4xl font-bold text-gray-800 border-b-2 border-gray-300 pb-2 mb-8 px-12">
-              {userName}
+            <h2
+              className="text-4xl font-bold pb-2 mb-8 px-12"
+              style={{
+                color: "#1f2937",
+                borderBottom: "2px solid #d1d5db",
+              }}
+            >
+              {certificateDetails.userName}
             </h2>
 
-            <div className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed mb-16">
-              concluiu com êxito a trilha de conhecimento <strong>"{courseName}"</strong>, 
-              com carga horária estimada de <strong>{totalHours}</strong>, 
-              desenvolvendo competências e habilidades em Prevenção de Riscos Digitais 
+            <div
+              className="text-lg max-w-3xl mx-auto leading-relaxed mb-16"
+              style={{ color: "#4b5563" }}
+            >
+              concluiu com êxito a trilha de conhecimento <strong>"{certificateDetails.courseName}"</strong>,
+              com carga horária estimada de <strong>{certificateDetails.totalHours}</strong>,
+              desenvolvendo competências e habilidades em Prevenção de Riscos Digitais
               para a família e sociedade.
             </div>
 
-            <div className="flex justify-between w-full px-24 font-medium text-gray-500">
+            <div
+              className="flex justify-between w-full px-24 font-medium"
+              style={{ color: "#6b7280" }}
+            >
               <div className="text-center">
-                <div className="border-b border-gray-400 w-48 mb-2 mx-auto"></div>
+                <div
+                  className="w-48 mb-2 mx-auto"
+                  style={{ borderBottom: "1px solid #9ca3af" }}
+                />
+
                 <p>Data de Conclusão</p>
-                <p className="text-[#8F1413] font-bold mt-1">{completionDate}</p>
+
+                <p
+                  className="font-bold mt-1"
+                  style={{ color: "#8F1413" }}
+                >
+                  {certificateDetails.completionDate}
+                </p>
               </div>
 
               <div className="text-center">
-                <div className="border-b border-gray-400 w-48 mb-2 mx-auto"></div>
+                <div
+                  className="w-48 mb-2 mx-auto"
+                  style={{ borderBottom: "1px solid #9ca3af" }}
+                />
+
                 <p>Equipe MackSeguro</p>
-                <p className="text-[#8F1413] font-bold mt-1">Coordenação</p>
+
+                <p
+                  className="font-bold mt-1"
+                  style={{ color: "#8F1413" }}
+                >
+                  Coordenação
+                </p>
               </div>
             </div>
           </div>
-          
-          <div className="absolute bottom-6 right-8 text-xs text-gray-400">
+
+          <div
+            className="absolute bottom-12 right-8 text-sm"
+            style={{ color: "#6b7280" }}
+          >
+            Código de validação: {certificateCode ?? "--"}
+          </div>
+
+          <div
+            className="absolute bottom-6 right-8 text-xs"
+            style={{ color: "#9ca3af" }}
+          >
             *Certificado emitido digitalmente pela plataforma. Válido sem assinatura.
           </div>
+
+          <div className="absolute bottom-4 left-8 flex items-center gap-4">
+            <QRCodeSVG
+              value={validationUrl}
+              size={80}
+            />
+
+            <div style={{ color: "#6b7280", fontSize: "12px" }}>
+              <p>Validar certificado:</p>
+              <p>{validationUrl}</p>
+            </div>
+          </div>
+
         </div>
       </div>
     </>

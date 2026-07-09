@@ -16,12 +16,12 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import { corMap } from "../data/mock.ts";
-import { loadTrails } from "../lib/trailsRemote.ts";
-import { loadModuleContent } from "../lib/moduleContentRemote.ts";
-import type { CorKey } from "../data/mock.ts";
+import { trilhas as mockTrilhas, conteudosModulos, corMap } from "../data/mock.ts";
+import type { ConteudoModulo, CorKey, Modulo, Trilha } from "../data/mock.ts";
 import Seo from "../components/seo/Seo.tsx";
 import { useUserDataRefresh } from "../hooks/useUserDataRefresh.ts";
+import { loadModuleContent } from "../lib/moduleContentRemote.ts";
+import { loadTrails } from "../lib/trailsRemote.ts";
 import {
   addRemoteForumComment,
   canReadForumFromRemote,
@@ -67,29 +67,169 @@ function sortByOldest(comments: ForumComment[]): ForumComment[] {
   });
 }
 
+type ModuloConteudoValidoProps = {
+  slugValue: string;
+  modId: number;
+  trilha: Trilha;
+  modulo: Modulo;
+  conteudo: ConteudoModulo;
+};
+
 export default function ModuloConteudo() {
   const { slug, moduloId } = useParams<{ slug: string; moduloId: string }>();
   const slugValue = slug ?? "";
-  const modId = moduloId ?? "";
-  const modIdCompat = modId as unknown as number;
-  const [trilhas, setTrilhas] = useState<any[]>([]);
-  const [conteudo, setConteudo] = useState<any | null>(null);
+  const modId = Number(moduloId);
+  const initialTrail = mockTrilhas.find((t) => t.slug === slugValue) ?? null;
+  const initialContent = conteudosModulos.find((c) =>
+    c.trilhaSlug === slugValue && c.moduloId === modId,
+  ) ?? null;
+  const [availableTrails, setAvailableTrails] = useState<Trilha[]>(mockTrilhas);
+  const [conteudo, setConteudo] = useState<ConteudoModulo | null>(initialContent);
+  const [loadingTrail, setLoadingTrail] = useState(!initialTrail);
+  const [loadingContent, setLoadingContent] = useState(!initialContent);
+  const trilha = availableTrails.find((t) => t.slug === slugValue);
+  const modulo = trilha?.modulos.find((m) => m.id === modId) ?? null;
 
-  const trilha = trilhas.find((t) => t.slug === slugValue);
+  useEffect(() => {
+    let ignore = false;
+    const fallback = mockTrilhas.find((item) => item.slug === slugValue) ?? null;
+
+    setAvailableTrails(mockTrilhas);
+    setLoadingTrail(!fallback);
+
+    loadTrails().then((loadedTrails) => {
+      if (!ignore) {
+        setAvailableTrails(loadedTrails);
+      }
+    }).catch((error) => {
+      console.error("[ModuloConteudo] remote trails load failed", error);
+    }).finally(() => {
+      if (!ignore) {
+        setLoadingTrail(false);
+      }
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, [slugValue]);
+
+  useEffect(() => {
+    let ignore = false;
+    const fallback = conteudosModulos.find((item) =>
+      item.trilhaSlug === slugValue && item.moduloId === modId,
+    ) ?? null;
+
+    setConteudo(fallback);
+    setLoadingContent(!fallback);
+
+    loadModuleContent(modId, slugValue).then((loadedContent) => {
+      if (!ignore) {
+        setConteudo(loadedContent ?? fallback);
+      }
+    }).catch((error) => {
+      console.error("[ModuloConteudo] remote module content load failed", error);
+    }).finally(() => {
+      if (!ignore) {
+        setLoadingContent(false);
+      }
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, [modId, slugValue]);
+
+  if (!trilha) {
+    if (loadingTrail) {
+      return (
+        <section className="bg-white px-4 py-20 text-center">
+          <h1 className="text-2xl font-bold text-[var(--color-text)]">
+            Carregando trilha...
+          </h1>
+        </section>
+      );
+    }
+
+    return (
+      <>
+        <Seo
+          title="Trilha não encontrada"
+          description="A trilha informada não foi encontrada no MackSeguro."
+          canonicalPath="/trilhas"
+        />
+
+        <section className="bg-white px-4 py-20 text-center">
+          <h1 className="mb-4 text-2xl font-bold text-[var(--color-text)]">Trilha não encontrada</h1>
+          <Link to="/trilhas" className="font-medium text-[var(--color-mack)] hover:underline cursor-pointer">← Voltar para trilhas</Link>
+        </section>
+      </>
+    );
+  }
+
+  if (!modulo) {
+    return (
+      <>
+        <Seo
+          title="Módulo não encontrado"
+          description="O módulo solicitado não foi encontrado no MackSeguro."
+          canonicalPath={`/trilhas/${trilha.slug}`}
+        />
+
+        <section className="bg-white px-4 py-20 text-center">
+          <h1 className="mb-4 text-2xl font-bold text-[var(--color-text)]">Módulo não encontrado</h1>
+          <Link to={`/trilhas/${trilha.slug}`} className="font-medium text-[var(--color-mack)] hover:underline cursor-pointer">← Voltar para a trilha</Link>
+        </section>
+      </>
+    );
+  }
+
+  if (!conteudo) {
+    if (loadingContent) {
+      return (
+        <section className="bg-white px-4 py-20 text-center">
+          <h1 className="text-2xl font-bold text-[var(--color-text)]">
+            Carregando módulo...
+          </h1>
+        </section>
+      );
+    }
+
+    return (
+      <>
+        <Seo
+          title="Módulo não encontrado"
+          description="O módulo solicitado não foi encontrado no MackSeguro."
+          canonicalPath={`/trilhas/${trilha.slug}`}
+        />
+
+        <section className="bg-white px-4 py-20 text-center">
+          <h1 className="mb-4 text-2xl font-bold text-[var(--color-text)]">Módulo não encontrado</h1>
+          <Link to={`/trilhas/${trilha.slug}`} className="font-medium text-[var(--color-mack)] hover:underline cursor-pointer">← Voltar para a trilha</Link>
+        </section>
+      </>
+    );
+  }
+
+  return (
+    <ModuloConteudoValido
+      slugValue={slugValue}
+      modId={modId}
+      trilha={trilha}
+      modulo={modulo}
+      conteudo={conteudo}
+    />
+  );
+}
+
+function ModuloConteudoValido({ slugValue, modId, trilha, modulo, conteudo }: ModuloConteudoValidoProps) {
   const { isLoaded, isSignedIn, user } = useUser();
   const dataVersion = useUserDataRefresh();
 
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [moduleCompleted, setModuleCompleted] = useState(() => {
-    if (!slugValue || !modId) {
-      return false;
-    }
-
-    return isModuleCompleted(slugValue, modId as any);
-  });
-
+  const [moduleCompleted, setModuleCompleted] = useState(() => isModuleCompleted(slugValue, modId));
   const [forumComments, setForumComments] = useState<ForumComment[]>([]);
   const [forumText, setForumText] = useState("");
   const [forumError, setForumError] = useState("");
@@ -98,48 +238,21 @@ export default function ModuloConteudo() {
   const [reportingCommentId, setReportingCommentId] = useState<string | null>(null);
   const [reportReason, setReportReason] = useState<ReportReason>("spam");
   const [reportedCommentId, setReportedCommentId] = useState<string | null>(null);
+  const cores = corMap[trilha.cor as CorKey];
+  const modIndex = trilha.modulos.findIndex((m) => m.id === modId);
+  const prevMod = modIndex > 0 ? trilha.modulos[modIndex - 1] : null;
+  const nextMod = modIndex < trilha.modulos.length - 1 ? trilha.modulos[modIndex + 1] : null;
+  const useRemoteForum = isLoaded && isSignedIn && canReadForumFromRemote();
+
+  const currentUserId = user?.id ?? "";
+  const currentUserName = user?.fullName
+    ?? user?.username
+    ?? user?.primaryEmailAddress?.emailAddress?.split("@")[0]
+    ?? "Aluno";
 
   useEffect(() => {
-    if (!slugValue || !modId) {
-      return;
-    }
-    setModuleCompleted(isModuleCompleted(slugValue, modId as any));
+    setModuleCompleted(isModuleCompleted(slugValue, modId));
   }, [slugValue, modId, dataVersion]);
-
-  useEffect(() => {
-    async function carregarDados() {
-      const trailsData = await loadTrails();
-      setTrilhas(trailsData);
-
-      if (modId) {
-        const contentData = await loadModuleContent(modId);
-
-        if (contentData) {
-          const normalizedContent = contentData as any;
-
-          setConteudo({
-            ...normalizedContent,
-            conteudo:
-              normalizedContent.conteudo ??
-              (normalizedContent.texto
-                ? String(normalizedContent.texto)
-                    .split("\n")
-                    .filter((paragrafo: string) => paragrafo.trim().length > 0)
-                : []),
-            questoes: normalizedContent.questoes ?? [],
-            videoTitulo: normalizedContent.videoTitulo ?? "Vídeo do módulo",
-            videoDuracao: normalizedContent.videoDuracao ?? "",
-          });
-        } else {
-          setConteudo(null);
-        }
-      } else {
-        setConteudo(null);
-      }
-    }
-
-    carregarDados();
-  }, [modId]);
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -153,27 +266,10 @@ export default function ModuloConteudo() {
     setReportedCommentId(null);
   }, [modId, slugValue]);
 
-  const modulo = trilha?.modulos?.find((m: any) => m.id === modId);
-  const cores = trilha ? (corMap[trilha.cor as CorKey] ?? corMap.red) : corMap.red;
-  const modIndex = trilha?.modulos?.findIndex((m: any) => m.id === modId) ?? -1;
-  const prevMod = trilha && modIndex > 0 ? trilha.modulos[modIndex - 1] : null;
-  const nextMod = trilha && modIndex >= 0 && modIndex < trilha.modulos.length - 1 ? trilha.modulos[modIndex + 1] : null;
-  const useRemoteForum = isLoaded && isSignedIn && canReadForumFromRemote();
-
-  const currentUserId = user?.id ?? "";
-  const currentUserName = user?.fullName
-    ?? user?.username
-    ?? user?.primaryEmailAddress?.emailAddress?.split("@")[0]
-    ?? "Aluno";
-
   const refreshForum = useCallback(async () => {
-    if (!conteudo || !slugValue || !modId) {
-      return;
-    }
-
     if (useRemoteForum) {
       try {
-        const remoteComments = await fetchRemoteForumComments(slugValue, modIdCompat)
+        const remoteComments = await fetchRemoteForumComments(slugValue, modId);
         if (remoteComments) {
           setForumComments(remoteComments);
           return;
@@ -183,7 +279,7 @@ export default function ModuloConteudo() {
       }
     }
 
-    getForumComments(slugValue, modIdCompat, [])
+    setForumComments(getForumComments(slugValue, modId, conteudo.forum));
   }, [conteudo, modId, slugValue, useRemoteForum]);
 
   useEffect(() => {
@@ -191,25 +287,25 @@ export default function ModuloConteudo() {
   }, [refreshForum]);
 
   useEffect(() => {
-    if (useRemoteForum || !conteudo || !slugValue || !modId) {
+    if (useRemoteForum) {
       return;
     }
 
     return subscribeToUserDataChanges(() => {
-      setForumComments(getForumComments(slugValue, modIdCompat, []))
+      setForumComments(getForumComments(slugValue, modId, conteudo.forum));
     });
   }, [conteudo, modId, slugValue, useRemoteForum]);
 
   useEffect(() => {
-    if (useRemoteForum || !conteudo || !isLoaded || !isSignedIn || !user?.id) {
+    if (useRemoteForum || !isLoaded || !isSignedIn || !user?.id) {
       return;
     }
 
     const migratedCount = migrateAnonymousPosts(user.id, currentUserName);
     if (migratedCount > 0) {
-      setForumComments(getForumComments(slugValue, modIdCompat, []));
+      setForumComments(getForumComments(slugValue, modId, conteudo.forum));
     }
-  }, [conteudo, currentUserName, isLoaded, isSignedIn, modId, slugValue, useRemoteForum, user?.id]);
+  }, [currentUserName, isLoaded, isSignedIn, modId, slugValue, useRemoteForum, user?.id]);
 
   const topLevelComments = useMemo(() => {
     return sortByRecent(forumComments.filter((comment) => comment.parentId === null));
@@ -234,23 +330,17 @@ export default function ModuloConteudo() {
     return map;
   }, [forumComments]);
 
-  const questoes = conteudo?.questoes ?? [];
-
-  const quizScore = questoes.reduce((acc: number, q: any) => {
+  const quizScore = conteudo.questoes.reduce((acc, q) => {
     return acc + (selectedAnswers[q.id] === q.respostaCorreta ? 1 : 0);
   }, 0);
 
   const handleSubmitQuiz = () => {
-    if (!conteudo) {
-      return;
-    }
-
     setQuizSubmitted(true);
     markModuleCompleted(
       slugValue,
-      modIdCompat,
+      modId,
       quizScore,
-      questoes.length,
+      conteudo.questoes.length,
       currentUserId,
     );
     setModuleCompleted(true);
@@ -277,7 +367,7 @@ export default function ModuloConteudo() {
       if (useRemoteForum) {
         await addRemoteForumComment({
           slug: slugValue,
-          moduloId: modIdCompat,
+          moduloId: modId,
           userId: currentUserId,
           authorName: currentUserName,
           content,
@@ -286,7 +376,7 @@ export default function ModuloConteudo() {
       } else {
         addForumComment({
           slug: slugValue,
-          moduloId: modIdCompat,
+          moduloId: modId,
           userId: currentUserId,
           authorName: currentUserName,
           content,
@@ -324,7 +414,7 @@ export default function ModuloConteudo() {
       if (useRemoteForum) {
         await addRemoteForumComment({
           slug: slugValue,
-          moduloId: modIdCompat,
+          moduloId: modId,
           userId: currentUserId,
           authorName: currentUserName,
           content,
@@ -333,7 +423,7 @@ export default function ModuloConteudo() {
       } else {
         addForumComment({
           slug: slugValue,
-          moduloId: modIdCompat,
+          moduloId: modId,
           userId: currentUserId,
           authorName: currentUserName,
           content,
@@ -376,7 +466,7 @@ export default function ModuloConteudo() {
           liked,
         });
       } else {
-        toggleForumCommentLike(slugValue, modIdCompat, commentId, currentUserId);
+        toggleForumCommentLike(slugValue, modId, commentId, currentUserId);
       }
 
       await refreshForum();
@@ -410,7 +500,7 @@ export default function ModuloConteudo() {
           return;
         }
       } else {
-        const success = reportForumComment(slugValue, modIdCompat, commentId, currentUserId, reportReason);
+        const success = reportForumComment(slugValue, modId, commentId, currentUserId, reportReason);
         if (!success) {
           setForumError("Você já denunciou este comentário.");
           return;
@@ -426,40 +516,6 @@ export default function ModuloConteudo() {
       setForumError("Não foi possível enviar sua denúncia agora. Tente novamente.");
     }
   };
-
-  if (!trilha) {
-    return (
-      <>
-        <Seo
-          title="Trilha não encontrada"
-          description="A trilha informada não foi encontrada no MackSeguro."
-          canonicalPath="/trilhas"
-        />
-
-        <section className="bg-white px-4 py-20 text-center">
-          <h1 className="mb-4 text-2xl font-bold text-[var(--color-text)]">Trilha não encontrada</h1>
-          <Link to="/trilhas" className="font-medium text-[var(--color-mack)] hover:underline cursor-pointer">← Voltar para trilhas</Link>
-        </section>
-      </>
-    );
-  }
-
-  if (!modulo || !conteudo) {
-    return (
-      <>
-        <Seo
-          title="Módulo não encontrado"
-          description="O módulo solicitado não foi encontrado no MackSeguro."
-          canonicalPath={`/trilhas/${trilha.slug}`}
-        />
-
-        <section className="bg-white px-4 py-20 text-center">
-          <h1 className="mb-4 text-2xl font-bold text-[var(--color-text)]">Módulo não encontrado</h1>
-          <Link to={`/trilhas/${trilha.slug}`} className="font-medium text-[var(--color-mack)] hover:underline cursor-pointer">← Voltar para a trilha</Link>
-        </section>
-      </>
-    );
-  }
 
   return (
     <>
@@ -494,7 +550,7 @@ export default function ModuloConteudo() {
             <nav className="sticky top-20">
               <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-[var(--color-text-muted)]">Módulos</h3>
               <ol className="space-y-1">
-                {trilha.modulos.map((m: any, i: number) => (
+                {trilha.modulos.map((m, i) => (
                   <li key={m.id}>
                     <Link
                       to={`/trilhas/${trilha.slug}/modulo/${m.id}`}
@@ -526,7 +582,7 @@ export default function ModuloConteudo() {
                   </button>
                 </div>
                 <ol className="space-y-1">
-                  {trilha.modulos.map((m: any, i: number) => (
+                  {trilha.modulos.map((m, i) => (
                     <li key={m.id}>
                       <Link
                         to={`/trilhas/${trilha.slug}/modulo/${m.id}`}
@@ -576,7 +632,7 @@ export default function ModuloConteudo() {
             <div className="card-mk mb-8 p-6 sm:p-8">
               <h2 className="mb-5 text-lg font-bold text-[var(--color-text)]">Conteúdo</h2>
               <div className="space-y-4">
-                {conteudo.conteudo.map((paragrafo: any, i: number) => (
+                {conteudo.conteudo.map((paragrafo, i) => (
                   <p key={i} className="text-sm leading-relaxed text-[var(--color-text-secondary)]">{paragrafo}</p>
                 ))}
               </div>
@@ -624,14 +680,14 @@ export default function ModuloConteudo() {
               </div>
 
               <div className="space-y-6">
-                {conteudo.questoes.map((q: any, qi: number) => (
+                {conteudo.questoes.map((q, qi) => (
                   <div key={q.id} className="rounded-xl border border-[var(--color-border)] p-5">
                     <p className="mb-3 font-medium text-[var(--color-text)]">
                       <span className="mr-2 text-[var(--color-text-muted)]">{qi + 1}.</span>
                       {q.pergunta}
                     </p>
                     <div className="space-y-2">
-                      {q.opcoes.map((opcao: any, oi: number) => {
+                      {q.opcoes.map((opcao, oi) => {
                         const selected = selectedAnswers[q.id] === oi;
                         const isCorrect = oi === q.respostaCorreta;
                         let optionStyle = quizSubmitted

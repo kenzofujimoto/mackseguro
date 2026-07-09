@@ -1,55 +1,96 @@
-import { useEffect, useState } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import {
-  ShieldCheck,
-  Heart,
-  Clock,
-  ArrowLeft,
-  ArrowRight,
-  CheckCircle2,
-} from "lucide-react";
-
-import { corMap } from "../data/mock.ts";
-import type { CorKey } from "../data/mock.ts";
-
+import { ShieldCheck, Heart, Clock, ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
+import { trilhas as mockTrilhas, corMap } from "../data/mock.ts";
+import type { CorKey, Trilha } from "../data/mock.ts";
 import Seo from "../components/seo/Seo.tsx";
-
 import { useUserDataRefresh } from "../hooks/useUserDataRefresh.ts";
-
 import {
   getTrailEarnedXp,
   getTrailProgress,
   isModuleCompleted,
 } from "../lib/userData.ts";
-
-import { loadTrails } from "../lib/trailsRemote.ts";
+import { useUser } from "@clerk/react";
+import { fetchUserGamification, type UserGamification } from "../lib/gamification/badges";
+import { loadTrailBySlug } from "../lib/trailsRemote.ts";
 
 export default function TrilhaDetalhe() {
+  const { user, isLoaded } = useUser();
   const { slug } = useParams<{ slug: string }>();
-
-  const [trilha, setTrilha] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useUserDataRefresh();
+  const initialTrail = mockTrilhas.find((t) => t.slug === slug) ?? null;
+  const [trilha, setTrilha] = useState<Trilha | null>(initialTrail);
+  const [loadingTrail, setLoadingTrail] = useState(!initialTrail);
+  const dataVersion = useUserDataRefresh();
+  const [gamification, setGamification] = useState<UserGamification | null>(null);
 
   useEffect(() => {
-    async function carregar() {
-      const trails = await loadTrails();
-
-      const encontrada =
-        trails.find((t: any) => t.slug === slug) ?? null;
-
-      setTrilha(encontrada);
-      setLoading(false);
+    if (!isLoaded) {
+      return;
     }
 
-    carregar();
+    if (!user?.id) {
+      setGamification(null);
+      return;
+    }
+
+    let ignore = false;
+
+    fetchUserGamification(user.id).then((data) => {
+      if (!ignore) {
+        setGamification(data);
+      }
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, [user?.id, dataVersion, isLoaded]);
+
+  useEffect(() => {
+    let ignore = false;
+    const fallback = mockTrilhas.find((item) => item.slug === slug) ?? null;
+
+    setTrilha(fallback);
+    setLoadingTrail(!fallback);
+
+    if (!slug) {
+      setLoadingTrail(false);
+      return undefined;
+    }
+
+    loadTrailBySlug(slug).then((loadedTrail) => {
+      if (!ignore) {
+        setTrilha(loadedTrail ?? fallback);
+      }
+    }).catch((error) => {
+      console.error("[TrilhaDetalhe] remote trail load failed", error);
+    }).finally(() => {
+      if (!ignore) {
+        setLoadingTrail(false);
+      }
+    });
+
+    return () => {
+      ignore = true;
+    };
   }, [slug]);
 
-  if (loading) {
+  const modulosConcluidos = useMemo(() => {
+    if (!trilha) {
+      return new Set<number>();
+    }
+
+    return new Set(
+      trilha.modulos
+        .filter((modulo) => isModuleCompleted(trilha.slug, modulo.id))
+        .map((modulo) => modulo.id),
+    );
+  }, [dataVersion, trilha]);
+
+  if (loadingTrail) {
     return (
       <section className="bg-white px-4 py-20 text-center">
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl font-bold text-[var(--color-text)]">
           Carregando trilha...
         </h1>
       </section>
@@ -69,7 +110,6 @@ export default function TrilhaDetalhe() {
           <h1 className="mb-4 text-2xl font-bold text-[var(--color-text)]">
             Trilha não encontrada
           </h1>
-
           <Link
             to="/trilhas"
             className="font-medium text-[var(--color-mack)] hover:underline cursor-pointer"
@@ -81,28 +121,10 @@ export default function TrilhaDetalhe() {
     );
   }
 
-  const Icon =
-    trilha.icone === "ShieldCheck"
-      ? ShieldCheck
-      : Heart;
-
-  const cores =
-    corMap[trilha.cor as CorKey] ??
-    corMap.red;
-
-  const progresso = getTrailProgress(
-    trilha.slug,
-    trilha.modulos.length,
-  );
-
-  const xpConquistado =
-    getTrailEarnedXp(trilha);
-
-  const modulosConcluidos = new Set(
-    trilha.modulos
-      .filter((modulo: any) => isModuleCompleted(trilha.slug, modulo.id))
-      .map((modulo: any) => modulo.id),
-  );
+  const Icon = trilha.icone === "ShieldCheck" ? ShieldCheck : Heart;
+  const cores = corMap[trilha.cor as CorKey];
+  const progresso = getTrailProgress(trilha.slug, trilha.modulos.length);
+  const xpConquistado = getTrailEarnedXp(trilha, gamification?.progressRows ?? []);
 
   return (
     <>
@@ -123,35 +145,27 @@ export default function TrilhaDetalhe() {
             Todas as trilhas
           </Link>
 
+          {/* Header card */}
           <div className="card-mk mb-8 p-6">
             <div className="flex items-start gap-4">
               <div className={`rounded-lg p-3 ${cores.bg}`}>
                 <Icon className={`h-7 w-7 ${cores.text}`} />
               </div>
-
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-[var(--color-text)] sm:text-3xl">
                   {trilha.titulo}
                 </h1>
-
                 <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
                   {trilha.descricaoLonga}
                 </p>
-
                 <div className="mt-3 flex flex-wrap gap-3 text-xs text-[var(--color-text-muted)]">
                   <span
                     className={`rounded-md px-2 py-0.5 font-medium ${cores.bg} ${cores.text}`}
                   >
                     {xpConquistado}/{trilha.totalXp} XP
                   </span>
-
-                  <span>
-                    {trilha.modulos.length} módulos
-                  </span>
-
-                  <span>
-                    {progresso.completedModules} concluídos
-                  </span>
+                  <span>{trilha.modulos.length} módulos</span>
+                  <span>{progresso.completedModules} concluídos</span>
                 </div>
               </div>
             </div>
@@ -159,78 +173,72 @@ export default function TrilhaDetalhe() {
             <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-[var(--color-bg-muted)]">
               <div
                 className={`h-full rounded-full ${cores.fill}`}
-                style={{
-                  width: `${progresso.percentage}%`,
-                }}
+                style={{ width: `${progresso.percentage}%` }}
               />
             </div>
-
             <p className="mt-1.5 text-right text-xs text-[var(--color-text-muted)]">
               {progresso.percentage}% concluído
             </p>
           </div>
 
-          <div className="space-y-4">
-            {trilha.modulos.map(
-              (modulo: any, index: number) => {
-                const concluido =
-                  modulosConcluidos.has(modulo.id);
+          {/* Modules */}
+          <h2 className="mb-4 text-lg font-bold text-[var(--color-text)]">
+            Módulos ({trilha.modulos.length})
+          </h2>
 
-                return (
-                  <div
-                    key={modulo.id}
-                    className="card-mk p-5"
+          <ol className="space-y-3">
+            {trilha.modulos.map((modulo, idx) => {
+              const concluido = modulosConcluidos.has(modulo.id);
+              return (
+                <li key={modulo.id}>
+                  <Link
+                    to={`/trilhas/${slug}/modulo/${modulo.id}`}
+                    className="card-mk interactive-card group block p-5"
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="mb-2 flex items-center gap-2">
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${cores.bg} ${cores.text}`}
-                          >
-                            Módulo {index + 1}
-                          </span>
+                    <div className="flex items-start gap-4">
+                      <div
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${cores.bg} ${cores.text}`}
+                      >
+                        {idx + 1}
+                      </div>
 
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-semibold text-[var(--color-text)] group-hover:text-[var(--color-mack)] transition-colors">
+                            {modulo.titulo}
+                          </h3>
                           {concluido && (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-green-600">
-                              <CheckCircle2 className="h-4 w-4" />
+                            <span className="inline-flex items-center gap-1 rounded-md bg-[var(--color-emerald-light)] px-2 py-0.5 text-xs font-medium text-[var(--color-emerald)]">
+                              <CheckCircle2 className="h-3.5 w-3.5" />
                               Concluído
                             </span>
                           )}
                         </div>
-
-                        <h2 className="text-lg font-bold text-[var(--color-text)]">
-                          {modulo.titulo}
-                        </h2>
-
                         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
                           {modulo.descricao}
                         </p>
-
-                        <div className="mt-3 flex items-center gap-4 text-xs text-[var(--color-text-muted)]">
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
+                        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[var(--color-text-muted)]">
+                          <span className="inline-flex items-center gap-1">
+                            <Clock className="h-3.5 w-3.5" />
                             {modulo.duracao}
                           </span>
-
-                          <span>
-                            {modulo.xp} XP
+                          <span className={`${cores.text} font-medium`}>
+                            +{modulo.xp} XP
                           </span>
                         </div>
                       </div>
 
-                      <Link
-                        to={`/trilhas/${trilha.slug}/modulo/${modulo.id}`}
-                        className="inline-flex items-center gap-1 rounded-lg bg-[var(--color-mack)] px-4 py-2 text-sm font-medium text-white transition hover:opacity-90"
-                      >
-                        Abrir
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
+                      {concluido ? (
+                        <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--color-emerald)]" />
+                      ) : (
+                        <ArrowRight className="h-5 w-5 shrink-0 text-[var(--color-text-muted)] transition-transform group-hover:translate-x-0.5" />
+                      )}
                     </div>
-                  </div>
-                );
-              },
-            )}
-          </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
         </div>
       </section>
     </>

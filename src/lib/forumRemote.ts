@@ -75,7 +75,7 @@ function createCommentId(): string {
   return `comment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function getRemoteForumClient(): SupabaseClient | null {
+async function getRemoteForumClient(): Promise<SupabaseClient | null> {
   if (import.meta.env.MODE === "test") {
     return null;
   }
@@ -88,14 +88,14 @@ function getRemoteForumClient(): SupabaseClient | null {
 }
 
 export function canReadForumFromRemote(): boolean {
-  return getRemoteForumClient() !== null;
+  return import.meta.env.MODE !== "test" && shouldReadFromSupabase();
 }
 
 export async function fetchRemoteForumComments(
   slug: string,
   moduloId: number,
 ): Promise<ForumComment[] | null> {
-  const client = getRemoteForumClient();
+  const client = await getRemoteForumClient();
   if (!client) {
     return null;
   }
@@ -179,7 +179,7 @@ export async function fetchRemoteForumComments(
 export async function addRemoteForumComment(
   input: AddRemoteForumCommentInput,
 ): Promise<void> {
-  const client = getRemoteForumClient();
+  const client = await getRemoteForumClient();
   if (!client) {
     throw new Error("Remote forum is not configured");
   }
@@ -217,7 +217,7 @@ export async function addRemoteForumComment(
 export async function toggleRemoteForumLike(
   input: ToggleRemoteForumLikeInput,
 ): Promise<void> {
-  const client = getRemoteForumClient();
+  const client = await getRemoteForumClient();
   if (!client) {
     throw new Error("Remote forum is not configured");
   }
@@ -259,7 +259,7 @@ export async function toggleRemoteForumLike(
 export async function reportRemoteForumComment(
   input: ReportRemoteForumCommentInput,
 ): Promise<RemoteForumReportResult> {
-  const client = getRemoteForumClient();
+  const client = await getRemoteForumClient();
   if (!client) {
     throw new Error("Remote forum is not configured");
   }
