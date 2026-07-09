@@ -5,6 +5,7 @@ import { setSupabaseTokenGetter } from "./lib/supabaseConfig.ts";
 import Navbar from "./components/layout/Navbar.tsx";
 import Footer from "./components/layout/Footer.tsx";
 import CourseAccessGate from "./components/auth/CourseAccessGate.tsx";
+import ProtectedAdminRoute from "./components/auth/ProtectedAdminRoute.tsx";
 import FontSizeControl from "./components/layout/FontSizeControl.tsx";
 import { syncRemoteProgressToLocal } from "./lib/userData.ts";
 
@@ -20,6 +21,14 @@ const AuthSignIn = React.lazy(() => import("./pages/AuthSignIn.tsx"));
 const AuthSignUp = React.lazy(() => import("./pages/AuthSignUp.tsx"));
 const Perfil = React.lazy(() => import("./pages/Perfil.tsx"));
 const CertificadoValidacao = React.lazy(() => import("./pages/CertificadoValidacao.tsx"));
+const AdminTrailsPage = React.lazy(() => import("./pages/admin/AdminTrailsPage.tsx"));
+const CreateTrailPage = React.lazy(() => import("./pages/admin/CreateTrailPage.tsx"));
+const EditTrailPage = React.lazy(() => import("./pages/admin/EditTrailPage.tsx"));
+const TrailModulesPage = React.lazy(() => import("./pages/admin/TrailModulesPage.tsx"));
+const EditModulePage = React.lazy(() => import("./pages/admin/EditModulePage.tsx"));
+const ModuleContentPage = React.lazy(() => import("./pages/admin/ModuleContentPage.tsx"));
+const ModuleQuizPage = React.lazy(() => import("./pages/admin/ModuleQuizPage.tsx"));
+const EditQuizQuestionPage = React.lazy(() => import("./pages/admin/EditQuizQuestionPage.tsx"));
 
 function NotFoundPage() {
   return (
@@ -95,6 +104,14 @@ function App() {
             <Route path="/sobre" element={<Sobre />} />
             <Route path="/perfil" element={<CourseAccessGate><Perfil /></CourseAccessGate>} />
             <Route path="/certificados/:certificateCode" element={<CertificadoValidacao />} />
+            <Route path="/admin/trilhas" element={<ProtectedAdminRoute><AdminTrailsPage /></ProtectedAdminRoute>} />
+            <Route path="/admin/trilhas/nova" element={<ProtectedAdminRoute><CreateTrailPage /></ProtectedAdminRoute>} />
+            <Route path="/admin/trilhas/:id/editar" element={<ProtectedAdminRoute><EditTrailPage /></ProtectedAdminRoute>} />
+            <Route path="/admin/trilhas/:id/modulos" element={<ProtectedAdminRoute><TrailModulesPage /></ProtectedAdminRoute>} />
+            <Route path="/admin/modulos/:id/editar" element={<ProtectedAdminRoute><EditModulePage /></ProtectedAdminRoute>} />
+            <Route path="/admin/modulos/:id/conteudo" element={<ProtectedAdminRoute><ModuleContentPage /></ProtectedAdminRoute>} />
+            <Route path="/admin/modulos/:id/quiz" element={<ProtectedAdminRoute><ModuleQuizPage /></ProtectedAdminRoute>} />
+            <Route path="/admin/quiz/:id/editar" element={<ProtectedAdminRoute><EditQuizQuestionPage /></ProtectedAdminRoute>} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

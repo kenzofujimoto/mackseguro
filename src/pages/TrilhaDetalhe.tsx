@@ -1,8 +1,8 @@
 import { useMemo, useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ShieldCheck, Heart, Clock, ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
-import { trilhas, corMap } from "../data/mock.ts";
-import type { CorKey } from "../data/mock.ts";
+import { trilhas as mockTrilhas, corMap } from "../data/mock.ts";
+import type { CorKey, Trilha } from "../data/mock.ts";
 import Seo from "../components/seo/Seo.tsx";
 import { useUserDataRefresh } from "../hooks/useUserDataRefresh.ts";
 import {
@@ -12,14 +12,17 @@ import {
 } from "../lib/userData.ts";
 import { useUser } from "@clerk/react";
 import { fetchUserGamification, type UserGamification } from "../lib/gamification/badges";
+import { loadTrailBySlug } from "../lib/trailsRemote.ts";
 
 export default function TrilhaDetalhe() {
   const { user, isLoaded } = useUser();
   const { slug } = useParams<{ slug: string }>();
-  const trilha = trilhas.find((t) => t.slug === slug);
+  const initialTrail = mockTrilhas.find((t) => t.slug === slug) ?? null;
+  const [trilha, setTrilha] = useState<Trilha | null>(initialTrail);
+  const [loadingTrail, setLoadingTrail] = useState(!initialTrail);
   const dataVersion = useUserDataRefresh();
   const [gamification, setGamification] = useState<UserGamification | null>(null);
-  
+
   useEffect(() => {
     if (!isLoaded) {
       return;
@@ -41,8 +44,58 @@ export default function TrilhaDetalhe() {
     return () => {
       ignore = true;
     };
-  }, [user?.id, dataVersion, isLoaded]); 
-  
+  }, [user?.id, dataVersion, isLoaded]);
+
+  useEffect(() => {
+    let ignore = false;
+    const fallback = mockTrilhas.find((item) => item.slug === slug) ?? null;
+
+    setTrilha(fallback);
+    setLoadingTrail(!fallback);
+
+    if (!slug) {
+      setLoadingTrail(false);
+      return undefined;
+    }
+
+    loadTrailBySlug(slug).then((loadedTrail) => {
+      if (!ignore) {
+        setTrilha(loadedTrail ?? fallback);
+      }
+    }).catch((error) => {
+      console.error("[TrilhaDetalhe] remote trail load failed", error);
+    }).finally(() => {
+      if (!ignore) {
+        setLoadingTrail(false);
+      }
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, [slug]);
+
+  const modulosConcluidos = useMemo(() => {
+    if (!trilha) {
+      return new Set<number>();
+    }
+
+    return new Set(
+      trilha.modulos
+        .filter((modulo) => isModuleCompleted(trilha.slug, modulo.id))
+        .map((modulo) => modulo.id),
+    );
+  }, [dataVersion, trilha]);
+
+  if (loadingTrail) {
+    return (
+      <section className="bg-white px-4 py-20 text-center">
+        <h1 className="text-2xl font-bold text-[var(--color-text)]">
+          Carregando trilha...
+        </h1>
+      </section>
+    );
+  }
 
   if (!trilha) {
     return (
@@ -71,15 +124,7 @@ export default function TrilhaDetalhe() {
   const Icon = trilha.icone === "ShieldCheck" ? ShieldCheck : Heart;
   const cores = corMap[trilha.cor as CorKey];
   const progresso = getTrailProgress(trilha.slug, trilha.modulos.length);
-  const xpConquistado = getTrailEarnedXp(trilha, (gamification as any)?.progressRows || []);
-
-  const modulosConcluidos = useMemo(() => {
-    return new Set(
-      trilha.modulos
-        .filter((modulo) => isModuleCompleted(trilha.slug, modulo.id))
-        .map((modulo) => modulo.id),
-    );
-  }, [dataVersion, trilha]);
+  const xpConquistado = getTrailEarnedXp(trilha, gamification?.progressRows ?? []);
 
   return (
     <>

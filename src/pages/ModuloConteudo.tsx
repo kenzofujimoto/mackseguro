@@ -16,10 +16,12 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import { trilhas, conteudosModulos, corMap } from "../data/mock.ts";
+import { trilhas as mockTrilhas, conteudosModulos, corMap } from "../data/mock.ts";
 import type { ConteudoModulo, CorKey, Modulo, Trilha } from "../data/mock.ts";
 import Seo from "../components/seo/Seo.tsx";
 import { useUserDataRefresh } from "../hooks/useUserDataRefresh.ts";
+import { loadModuleContent } from "../lib/moduleContentRemote.ts";
+import { loadTrails } from "../lib/trailsRemote.ts";
 import {
   addRemoteForumComment,
   canReadForumFromRemote,
@@ -77,9 +79,78 @@ export default function ModuloConteudo() {
   const { slug, moduloId } = useParams<{ slug: string; moduloId: string }>();
   const slugValue = slug ?? "";
   const modId = Number(moduloId);
-  const trilha = trilhas.find((t) => t.slug === slugValue);
+  const initialTrail = mockTrilhas.find((t) => t.slug === slugValue) ?? null;
+  const initialContent = conteudosModulos.find((c) =>
+    c.trilhaSlug === slugValue && c.moduloId === modId,
+  ) ?? null;
+  const [availableTrails, setAvailableTrails] = useState<Trilha[]>(mockTrilhas);
+  const [conteudo, setConteudo] = useState<ConteudoModulo | null>(initialContent);
+  const [loadingTrail, setLoadingTrail] = useState(!initialTrail);
+  const [loadingContent, setLoadingContent] = useState(!initialContent);
+  const trilha = availableTrails.find((t) => t.slug === slugValue);
+  const modulo = trilha?.modulos.find((m) => m.id === modId) ?? null;
+
+  useEffect(() => {
+    let ignore = false;
+    const fallback = mockTrilhas.find((item) => item.slug === slugValue) ?? null;
+
+    setAvailableTrails(mockTrilhas);
+    setLoadingTrail(!fallback);
+
+    loadTrails().then((loadedTrails) => {
+      if (!ignore) {
+        setAvailableTrails(loadedTrails);
+      }
+    }).catch((error) => {
+      console.error("[ModuloConteudo] remote trails load failed", error);
+    }).finally(() => {
+      if (!ignore) {
+        setLoadingTrail(false);
+      }
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, [slugValue]);
+
+  useEffect(() => {
+    let ignore = false;
+    const fallback = conteudosModulos.find((item) =>
+      item.trilhaSlug === slugValue && item.moduloId === modId,
+    ) ?? null;
+
+    setConteudo(fallback);
+    setLoadingContent(!fallback);
+
+    loadModuleContent(modId, slugValue).then((loadedContent) => {
+      if (!ignore) {
+        setConteudo(loadedContent ?? fallback);
+      }
+    }).catch((error) => {
+      console.error("[ModuloConteudo] remote module content load failed", error);
+    }).finally(() => {
+      if (!ignore) {
+        setLoadingContent(false);
+      }
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, [modId, slugValue]);
 
   if (!trilha) {
+    if (loadingTrail) {
+      return (
+        <section className="bg-white px-4 py-20 text-center">
+          <h1 className="text-2xl font-bold text-[var(--color-text)]">
+            Carregando trilha...
+          </h1>
+        </section>
+      );
+    }
+
     return (
       <>
         <Seo
@@ -96,10 +167,34 @@ export default function ModuloConteudo() {
     );
   }
 
-  const modulo = trilha.modulos.find((m) => m.id === modId);
-  const conteudo = conteudosModulos.find((c) => c.trilhaSlug === slugValue && c.moduloId === modId);
+  if (!modulo) {
+    return (
+      <>
+        <Seo
+          title="Módulo não encontrado"
+          description="O módulo solicitado não foi encontrado no MackSeguro."
+          canonicalPath={`/trilhas/${trilha.slug}`}
+        />
 
-  if (!modulo || !conteudo) {
+        <section className="bg-white px-4 py-20 text-center">
+          <h1 className="mb-4 text-2xl font-bold text-[var(--color-text)]">Módulo não encontrado</h1>
+          <Link to={`/trilhas/${trilha.slug}`} className="font-medium text-[var(--color-mack)] hover:underline cursor-pointer">← Voltar para a trilha</Link>
+        </section>
+      </>
+    );
+  }
+
+  if (!conteudo) {
+    if (loadingContent) {
+      return (
+        <section className="bg-white px-4 py-20 text-center">
+          <h1 className="text-2xl font-bold text-[var(--color-text)]">
+            Carregando módulo...
+          </h1>
+        </section>
+      );
+    }
+
     return (
       <>
         <Seo

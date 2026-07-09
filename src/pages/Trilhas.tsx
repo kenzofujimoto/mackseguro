@@ -1,18 +1,20 @@
 import { useMemo, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ShieldCheck, Heart, ArrowRight } from "lucide-react";
-import { trilhas, corMap } from "../data/mock.ts";
-import type { CorKey } from "../data/mock.ts";
+import { trilhas as mockTrilhas, corMap } from "../data/mock.ts";
+import type { CorKey, Trilha } from "../data/mock.ts";
 import Seo from "../components/seo/Seo.tsx";
 import { useUserDataRefresh } from "../hooks/useUserDataRefresh.ts";
 import { fetchUserGamification, type UserGamification } from "../lib/gamification/badges";
 import { getTrailEarnedXp, getTrailProgress } from "../lib/userData.ts";
+import { loadTrails } from "../lib/trailsRemote.ts";
 import { useUser } from "@clerk/react";
 
 export default function Trilhas() {
   const { user, isLoaded } = useUser();
   const dataVersion = useUserDataRefresh();
   const [gamification, setGamification] = useState<UserGamification | null>(null);
+  const [trilhas, setTrilhas] = useState<Trilha[]>(mockTrilhas);
 
   useEffect(() => {
     if (!isLoaded) {
@@ -35,17 +37,33 @@ export default function Trilhas() {
     return () => {
       ignore = true;
     };
-  }, [user?.id, dataVersion, isLoaded]); 
+  }, [user?.id, dataVersion, isLoaded]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    loadTrails().then((loadedTrails) => {
+      if (!ignore) {
+        setTrilhas(loadedTrails);
+      }
+    }).catch((error) => {
+      console.error("[Trilhas] remote trails load failed", error);
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const trilhasComProgresso = useMemo(() => {
-    const rows = (gamification as any)?.progressRows || []; 
+    const rows = gamification?.progressRows ?? [];
 
     return trilhas.map((trilha) => ({
       trilha,
       progresso: getTrailProgress(trilha.slug, trilha.modulos.length),
-      xpConquistado: getTrailEarnedXp(trilha, rows), 
+      xpConquistado: getTrailEarnedXp(trilha, rows),
     }));
-  }, [gamification, dataVersion]);
+  }, [gamification, dataVersion, trilhas]);
 
   return (
     <>
